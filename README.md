@@ -4,10 +4,14 @@
 
 > 非官方社区插件。本项目与 Obsidian、腾讯及 WorkBuddy 官方不存在隶属或背书关系；WorkBuddy 等名称与标识归其各自权利人所有。
 
+<p align="center">
+  <img src="docs/screenshots/workbuddy-panel.png" alt="WorkBuddy for Obsidian 侧边栏界面" width="520">
+</p>
+
 ## 功能亮点
 
 - 最多 5 个相互独立的任务页，可切换、重命名、关闭和恢复。
-- 自动捕获编辑器选区，在右侧显示引用原文，并支持 Diff 确认后替换与安全撤销。
+- 自动捕获选区文字，在右侧显示引用的文字，实现对局部文字的提问和优化，并支持确认后替换与安全撤销。
 - `@` 引用笔记、文件夹、标签、标题段落、PDF、图片及其他 Vault 文件。
 - “上传本地文件”支持系统多选，复制到 `WorkBuddy/Uploads/` 后加入当前任务。
 - 回答底部展示可点击的 Vault 与网页来源。
