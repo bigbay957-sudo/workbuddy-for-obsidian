@@ -109,7 +109,7 @@ export class WorkBuddyClient {
           terminal: false,
           plan: {}
         },
-        clientInfo: { name: "WorkBuddy for Obsidian", version: "0.7.2" }
+        clientInfo: { name: "WorkBuddy for Obsidian", version: "0.7.3" }
       });
       await this.createSession();
       this.emit({ type: "status", status: "ready", detail: "WorkBuddy 已连接" });

@@ -39,12 +39,12 @@ describe("buildWorkBuddyPrompt", () => {
     const result = buildWorkBuddyPrompt(
       "润色这段话",
       "work",
-      [{ path: "投标/分工.md", content: "第 3 至 5 条", kind: "selection" }],
+      [{ path: "项目/分工.md", content: "第 3 至 5 条", kind: "selection" }],
       40_000
     );
 
     expect(result).toContain("工作模式");
-    expect(result).toContain('<obsidian-selection path="投标/分工.md">');
+    expect(result).toContain('<obsidian-selection path="项目/分工.md">');
     expect(result).toContain("第 3 至 5 条");
   });
 

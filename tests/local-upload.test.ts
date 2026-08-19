@@ -3,7 +3,7 @@ import { MAX_LOCAL_UPLOAD_BYTES, buildUniqueUploadPath, canUploadLocalFile, sani
 
 describe("local file upload", () => {
   it("sanitizes names and keeps the extension", () => {
-    expect(sanitizeUploadFileName("投标/方案?.pdf")).toBe("投标-方案-.pdf");
+    expect(sanitizeUploadFileName("项目/方案?.pdf")).toBe("项目-方案-.pdf");
   });
 
   it("adds a suffix when the vault path already exists", () => {

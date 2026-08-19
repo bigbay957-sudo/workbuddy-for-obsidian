@@ -22,7 +22,7 @@ export class ContextPackModal extends Modal {
       cls: "workbuddy-empty-hint"
     });
     const createRow = this.contentEl.createDiv({ cls: "workbuddy-pack-create" });
-    const input = createRow.createEl("input", { type: "text", attr: { placeholder: "例如：广州逸合中心投标" } });
+    const input = createRow.createEl("input", { type: "text", attr: { placeholder: "例如：产品发布项目资料" } });
     input.maxLength = 60;
     const save = createRow.createEl("button", { text: "保存当前资料", cls: "mod-cta" });
     save.disabled = this.currentReferenceCount === 0;

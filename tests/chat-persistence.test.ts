@@ -64,9 +64,9 @@ describe("chat persistence", () => {
       }],
       contextPacks: [{
         id: "pack-1",
-        name: "投标资料",
+        name: "产品资料",
         attachedPaths: ["项目.md", "项目.md"],
-        contextReferences: [{ id: "tag:#投标", kind: "tag", label: "#投标", tag: "#投标" }],
+        contextReferences: [{ id: "tag:#产品", kind: "tag", label: "#产品", tag: "#产品" }],
         createdAt: 1,
         updatedAt: 2
       }]
@@ -81,7 +81,7 @@ describe("chat persistence", () => {
       ...task("task-1"),
       title: "广州项目",
       attachedPaths: ["项目/需求.md"],
-      contextReferences: [{ id: "tag:#投标", kind: "tag", label: "#投标", tag: "#投标" }],
+      contextReferences: [{ id: "tag:#产品", kind: "tag", label: "#产品", tag: "#产品" }],
       messages: [{
         ...message("a", "assistant", "结论"),
         favorite: true,
