@@ -1,0 +1,34 @@
+name: Release Obsidian plugin
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - name: Verify tag matches manifest
+        run: test "${GITHUB_REF_NAME}" = "$(node -p "require('./manifest.json').version")"
+      - name: Build installation zip
+        run: zip "workbuddy-for-obsidian-${GITHUB_REF_NAME}.zip" main.js manifest.json styles.css
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: docs/releases/${{ github.ref_name }}.md
+          files: |
+            main.js
+            manifest.json
+            styles.css
+            workbuddy-for-obsidian-${{ github.ref_name }}.zip
+          generate_release_notes: true

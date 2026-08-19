@@ -1,0 +1,169 @@
+.workbuddy-view {
+  --wb-blue: #2f6fec;
+  --wb-blue-soft: color-mix(in srgb, var(--wb-blue) 12%, transparent);
+  --wb-border: var(--background-modifier-border);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  background: var(--background-primary);
+}
+
+.workbuddy-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--wb-border);
+}
+
+.workbuddy-brand { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.workbuddy-brand-icon { color: var(--text-muted); display: flex; }
+.workbuddy-brand-title { font-weight: 650; }
+.workbuddy-status { margin-left: auto; display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 11px; }
+.workbuddy-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+.workbuddy-status-dot.is-ready { background: var(--color-green); }
+.workbuddy-status-dot.is-working, .workbuddy-status-dot.is-connecting { background: var(--color-yellow); }
+.workbuddy-status-dot.is-error { background: var(--color-red); }
+.workbuddy-icon-button { border: 0; background: transparent; box-shadow: none; padding: 5px; }
+
+.workbuddy-task-bar { display: flex; align-items: center; gap: 8px; min-height: 39px; padding: 5px 10px; border-bottom: 1px solid var(--wb-border); }
+.workbuddy-task-tabs { display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.workbuddy-task-tabs::-webkit-scrollbar { display: none; }
+.workbuddy-task-tab { display: inline-flex; align-items: center; flex: 0 0 auto; min-width: 30px; height: 30px; padding: 0 3px; border: 1px solid var(--background-modifier-border); border-radius: 8px; background: var(--background-secondary); color: var(--text-muted); font-size: 12px; font-weight: 600; box-shadow: none; transition: border-color .15s ease, background-color .15s ease, color .15s ease, transform .15s ease; }
+.workbuddy-task-tab:hover { border-color: var(--background-modifier-border-hover); background: var(--background-modifier-hover); color: var(--text-normal); transform: translateY(-1px); }
+.workbuddy-task-tab.is-active { border-color: color-mix(in srgb, var(--wb-blue) 58%, var(--wb-border)); background: color-mix(in srgb, var(--wb-blue) 11%, var(--background-primary)); color: var(--wb-blue); box-shadow: none !important; }
+.workbuddy-task-tab.is-working { border-color: var(--color-yellow); }
+.workbuddy-task-tab.is-error { border-color: var(--color-red); }
+.workbuddy-task-tab-label { height: 26px; padding: 0 7px; border: 0; background: transparent; color: inherit; box-shadow: none !important; }
+.workbuddy-task-tab-label { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; }
+.workbuddy-add-task { margin-left: auto; border: 0; background: transparent; color: var(--text-muted); box-shadow: none; }
+.workbuddy-add-task:hover { color: var(--wb-blue); }
+.workbuddy-add-task:disabled { opacity: .35; cursor: not-allowed; }
+
+.workbuddy-messages-host { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+
+.workbuddy-messages {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 12px 26px;
+  scroll-padding-bottom: 24px;
+}
+.workbuddy-messages[hidden] { display: none; }
+
+.workbuddy-welcome { margin: 10vh auto 20px; max-width: 340px; text-align: center; color: var(--text-muted); }
+.workbuddy-welcome-icon { display: inline-flex; padding: 12px; border-radius: 16px; color: var(--wb-blue); background: var(--wb-blue-soft); }
+.workbuddy-welcome h3 { margin: 12px 0 6px; color: var(--text-normal); }
+.workbuddy-welcome p { margin: 0; line-height: 1.6; }
+
+.workbuddy-message { margin: 0 0 14px; }
+.workbuddy-message.is-user { display: flex; justify-content: flex-end; }
+.workbuddy-message.is-user .workbuddy-message-body { max-width: 88%; padding: 9px 12px; border-radius: 14px 14px 3px 14px; background: var(--wb-blue); color: white; white-space: pre-wrap; }
+.workbuddy-message.is-assistant { padding: 1px 2px; }
+.workbuddy-message-label { margin-bottom: 5px; color: var(--wb-blue); font-size: 11px; font-weight: 700; }
+.workbuddy-message-body { line-height: 1.62; overflow-wrap: anywhere; }
+.workbuddy-message-body.is-streaming { white-space: pre-wrap; }
+.workbuddy-message-body > :first-child { margin-top: 0; }
+.workbuddy-message-body > :last-child { margin-bottom: 0; }
+
+.workbuddy-thought, .workbuddy-tool, .workbuddy-plan { margin: 8px 0 12px; border: 1px solid var(--wb-border); border-radius: 9px; background: var(--background-secondary); }
+.workbuddy-thought { padding: 7px 9px; color: var(--text-muted); font-size: 12px; }
+.workbuddy-thought pre, .workbuddy-tool pre, .workbuddy-plan pre { max-height: 180px; overflow: auto; white-space: pre-wrap; }
+.workbuddy-tool { display: flex; gap: 9px; padding: 9px; }
+.workbuddy-tool-icon { display: flex; color: var(--text-muted); }
+.workbuddy-tool-main { min-width: 0; flex: 1; }
+.workbuddy-tool-title { font-size: 12px; font-weight: 600; }
+.workbuddy-tool-status { color: var(--text-muted); font-size: 11px; }
+.workbuddy-plan { padding: 10px; }
+.workbuddy-error { margin: 8px 0; padding: 9px; border-radius: 8px; background: color-mix(in srgb, var(--color-red) 12%, transparent); color: var(--text-error); }
+
+.workbuddy-response-actions { display: flex; gap: 2px; margin-top: 7px; opacity: .72; }
+.workbuddy-response-actions button { border: 0; background: transparent; box-shadow: none; }
+.workbuddy-response-actions button.is-favorite { color: var(--color-yellow); opacity: 1; }
+.workbuddy-sources { margin-top: 9px; color: var(--text-muted); font-size: 11px; }
+.workbuddy-sources summary { cursor: pointer; user-select: none; }
+.workbuddy-source-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.workbuddy-source-link { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 3px 7px; border: 1px solid var(--wb-border); border-radius: 7px; background: var(--background-secondary); color: var(--text-muted); box-shadow: none; font-size: 10px; }
+.workbuddy-source-link span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workbuddy-source-link:hover { border-color: color-mix(in srgb, var(--wb-blue) 45%, var(--wb-border)); color: var(--wb-blue); }
+.workbuddy-tool-history { margin-top: 8px; color: var(--text-muted); font-size: 11px; }
+.workbuddy-tool-history summary { cursor: pointer; }
+.workbuddy-tool-history-row { margin: 5px 0; padding-left: 8px; border-left: 2px solid var(--wb-border); }
+.workbuddy-tool-history-row > span { margin-right: 7px; }
+.workbuddy-tool-history-row pre { max-height: 140px; overflow: auto; margin: 4px 0; white-space: pre-wrap; font-size: 10px; }
+
+.workbuddy-composer { flex: 0 0 auto; padding: 8px 10px 11px; border-top: 1px solid var(--wb-border); background: var(--background-primary); }
+.workbuddy-composer-context-row { display: flex; align-items: flex-start; gap: 8px; min-height: 28px; margin-bottom: 6px; }
+.workbuddy-context { display: flex; flex: 1; min-width: 0; flex-wrap: wrap; align-items: flex-start; gap: 5px; }
+.workbuddy-composer-task-actions { display: flex; flex: 0 0 28px; align-items: center; justify-content: flex-end; margin-left: auto; }
+.workbuddy-task-action { width: 28px; height: 28px; padding: 5px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); box-shadow: none !important; }
+.workbuddy-task-action:hover { background: var(--background-modifier-hover); color: var(--wb-blue); }
+.workbuddy-task-action:disabled { opacity: .32; }
+.workbuddy-slash-menu { max-height: 230px; overflow-y: auto; margin-bottom: 6px; padding: 4px; border: 1px solid var(--wb-border); border-radius: 9px; background: var(--background-secondary); box-shadow: var(--shadow-s); }
+.workbuddy-slash-menu[hidden] { display: none; }
+.workbuddy-slash-item { display: block; width: 100%; padding: 7px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--text-normal); box-shadow: none; text-align: left; }
+.workbuddy-slash-item:hover, .workbuddy-slash-item:focus { background: var(--background-modifier-hover); }
+.workbuddy-slash-name { display: block; color: var(--wb-blue); font-size: 11px; font-weight: 650; }
+.workbuddy-slash-description { display: block; margin-top: 1px; color: var(--text-muted); font-size: 10px; }
+.workbuddy-context-pill { display: inline-flex; align-items: center; gap: 3px; max-width: 180px; padding: 2px 7px; border: 1px solid var(--wb-border); border-radius: 99px; color: var(--text-muted); font-size: 10px; }
+.workbuddy-context-pill button { border: 0; padding: 0 1px; background: transparent; color: var(--text-muted); box-shadow: none; }
+.workbuddy-selection-card { width: 100%; padding: 8px 9px; border: 1px solid color-mix(in srgb, var(--wb-blue) 40%, var(--wb-border)); border-radius: 10px; background: var(--wb-blue-soft); }
+.workbuddy-selection-header { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 6px; }
+.workbuddy-selection-title { min-width: 0; flex: 1; color: var(--wb-blue); font-size: 10px; font-weight: 650; }
+.workbuddy-selection-path { display: block; overflow: hidden; margin-top: 1px; color: var(--text-faint); font-size: 9px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.workbuddy-selection-remove { flex: 0 0 auto; min-width: 18px; height: 18px; padding: 0; border: 0; background: transparent; color: var(--text-muted); box-shadow: none; line-height: 18px; }
+.workbuddy-selection-content { max-height: 112px; overflow: auto; padding: 6px 7px; border-radius: 6px; background: color-mix(in srgb, var(--background-primary) 82%, transparent); color: var(--text-normal); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; user-select: text; white-space: pre-wrap; }
+.workbuddy-input { width: 100%; min-height: 72px; max-height: 220px; resize: vertical; border-radius: 10px; padding: 9px 10px; }
+.workbuddy-composer-toolbar { display: flex; align-items: center; margin-top: 7px; }
+.workbuddy-secondary-button { border: 0; background: transparent; color: var(--text-muted); box-shadow: none; font-size: 11px; }
+.workbuddy-secondary-button:disabled { opacity: .38; }
+.workbuddy-send-actions { margin-left: auto; display: flex; gap: 6px; }
+.workbuddy-stop-button, .workbuddy-send-button { padding: 5px 12px; }
+
+.workbuddy-permission-modal details { margin: 10px 0; }
+.workbuddy-permission-modal pre { max-height: 260px; overflow: auto; white-space: pre-wrap; font-size: 11px; }
+
+.workbuddy-small-modal input, .workbuddy-save-chat-title { width: 100%; }
+.workbuddy-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.workbuddy-chat-choice-list { max-height: 52vh; overflow-y: auto; margin-top: 12px; border: 1px solid var(--background-modifier-border); border-radius: 10px; }
+.workbuddy-chat-choice { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 9px; padding: 10px; border-bottom: 1px solid var(--background-modifier-border); cursor: pointer; }
+.workbuddy-chat-choice:last-child { border-bottom: 0; }
+.workbuddy-chat-choice-role { color: var(--wb-blue); font-size: 11px; font-weight: 700; }
+.workbuddy-chat-choice-preview { margin-top: 2px; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.workbuddy-history-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); }
+.workbuddy-history-search { width: 100%; margin-bottom: 8px; }
+.workbuddy-history-list { max-height: 58vh; overflow-y: auto; }
+.workbuddy-history-main { min-width: 0; flex: 1; }
+.workbuddy-history-title { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.workbuddy-history-meta, .workbuddy-empty-hint { color: var(--text-muted); font-size: 11px; }
+.workbuddy-pack-create { display: flex; gap: 8px; margin: 12px 0; }
+.workbuddy-pack-create input { min-width: 0; flex: 1; }
+.workbuddy-pack-list { max-height: 48vh; overflow-y: auto; }
+.workbuddy-pack-row, .workbuddy-related-row { display: flex; align-items: center; gap: 7px; padding: 9px 0; border-bottom: 1px solid var(--background-modifier-border); }
+.workbuddy-pack-main { min-width: 0; flex: 1; }
+.workbuddy-pack-title { font-weight: 600; }
+.workbuddy-related-title { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: transparent; color: var(--text-normal); box-shadow: none; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.workbuddy-related-title:hover { color: var(--wb-blue); }
+.workbuddy-related-reasons { margin-top: 3px; color: var(--wb-blue); font-size: 10px; }
+.workbuddy-update-notes { max-height: 42vh; overflow: auto; padding: 9px; border-radius: 8px; background: var(--background-secondary); white-space: pre-wrap; font-size: 11px; }
+.workbuddy-context-suggestion { display: flex; align-items: flex-start; gap: 8px; }
+.workbuddy-context-suggestion-kind { flex: 0 0 auto; margin-top: 1px; padding: 1px 5px; border-radius: 5px; background: var(--wb-blue-soft); color: var(--wb-blue); font-size: 9px; }
+.workbuddy-context-suggestion-main { min-width: 0; }
+.workbuddy-context-suggestion-title { overflow: hidden; color: var(--text-normal); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.workbuddy-context-suggestion-detail { overflow: hidden; color: var(--text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.workbuddy-diff-modal { width: min(860px, 92vw); }
+.workbuddy-diff-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.workbuddy-diff-side { min-width: 0; }
+.workbuddy-diff-title { margin-bottom: 5px; color: var(--text-muted); font-size: 11px; font-weight: 650; }
+.workbuddy-diff-preview { min-height: 180px; max-height: 52vh; overflow: auto; padding: 10px; border: 1px solid var(--background-modifier-border); border-radius: 8px; background: var(--background-secondary); white-space: pre-wrap; overflow-wrap: anywhere; }
+.workbuddy-diff-preview mark { padding: 1px 0; color: inherit; }
+.workbuddy-diff-preview mark.is-removed { background: color-mix(in srgb, var(--color-red) 24%, transparent); text-decoration: line-through; }
+.workbuddy-diff-preview mark.is-added { background: color-mix(in srgb, var(--color-green) 24%, transparent); }
+
+@media (max-width: 360px) {
+  .workbuddy-status span:last-child { display: none; }
+  .workbuddy-diff-grid { grid-template-columns: 1fr; }
+}
