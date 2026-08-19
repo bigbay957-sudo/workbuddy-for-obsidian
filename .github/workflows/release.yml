@@ -12,8 +12,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -23,7 +23,7 @@ jobs:
         run: test "${GITHUB_REF_NAME}" = "$(node -p "require('./manifest.json').version")"
       - name: Build installation zip
         run: zip "workbuddy-for-obsidian-${GITHUB_REF_NAME}.zip" main.js manifest.json styles.css
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           body_path: docs/releases/${{ github.ref_name }}.md
           files: |
