@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import * as acp from "@agentclientprotocol/sdk";
+import type { ContentBlock } from "@agentclientprotocol/sdk";
 import type {
   ClientConnection,
   RequestPermissionRequest,
@@ -13,12 +14,17 @@ import type {
 import { normalizeSessionUpdate } from "./event-normalizer";
 import { chooseAutomaticPermission } from "./permissions";
 import type {
+  ConfigOptionState,
+  ModelOption,
   PermissionChoice,
   PermissionPrompt,
+  PromptImage,
   RuntimeEvent,
   WorkBuddySettings,
   WorkMode
 } from "../types";
+
+const PLUGIN_VERSION = "0.8.3";
 
 type SettingsProvider = () => WorkBuddySettings;
 type PermissionHandler = (prompt: PermissionPrompt) => Promise<PermissionChoice | null>;
@@ -31,6 +37,7 @@ export class WorkBuddyClient {
   private permissionHandler: PermissionHandler | null = null;
   private mode: WorkMode = "ask";
   private stderrTail = "";
+  private prompting = false;
 
   constructor(
     private readonly getSettings: SettingsProvider,
@@ -95,7 +102,10 @@ export class WorkBuddyClient {
       )
       .onNotification(acp.methods.client.session.update, (ctx) => {
         const event = normalizeSessionUpdate(ctx.params);
-        if (event) this.emit(event);
+        if (!event) return;
+        // 过滤 CLI 启动期间的 banner 文本：仅在 prompt 轮次内接受 agent 文本输出
+        if (event.type === "agent-text" && !this.prompting) return;
+        this.emit(event);
       });
 
     this.connection = app.connect(acp.ndJsonStream(output, input));
@@ -109,7 +119,7 @@ export class WorkBuddyClient {
           terminal: false,
           plan: {}
         },
-        clientInfo: { name: "WorkBuddy for Obsidian", version: "0.7.3" }
+        clientInfo: { name: "WorkBuddy for Obsidian", version: PLUGIN_VERSION }
       });
       await this.createSession();
       this.emit({ type: "status", status: "ready", detail: "WorkBuddy 已连接" });
@@ -135,22 +145,49 @@ export class WorkBuddyClient {
       mcpServers: []
     });
     this.sessionId = result.sessionId;
+    this.emit({ type: "config-options", options: extractConfigOptions(result.configOptions) });
   }
 
-  async prompt(text: string): Promise<void> {
+  async prompt(text: string, images: PromptImage[] = []): Promise<void> {
     await this.connect();
     if (!this.sessionId) await this.newSession();
+    this.prompting = true;
     this.emit({ type: "status", status: "working", detail: "WorkBuddy 正在工作" });
     try {
+      const blocks: ContentBlock[] = [];
+    if (text.trim()) blocks.push({ type: "text", text });
+    for (const image of images) {
+      blocks.push({ type: "image", data: image.data, mimeType: image.mimeType });
+    }
+    const promptBlocks: ContentBlock[] = blocks.length ? blocks : [{ type: "text", text: "" }];
       const result = await this.connection!.agent.request(acp.methods.agent.session.prompt, {
         sessionId: this.sessionId!,
-        prompt: [{ type: "text", text }]
+        prompt: promptBlocks
       });
       this.emit({ type: "turn-stop", reason: result.stopReason });
       this.emit({ type: "status", status: "ready", detail: "本轮完成" });
     } catch (error) {
       this.fail(error);
       throw error;
+    } finally {
+      this.prompting = false;
+    }
+  }
+
+  async setConfigOption(configId: string, value: string): Promise<void> {
+    if (!this.connection || !this.sessionId) return;
+    try {
+      const result = await this.connection.agent.request(
+        acp.methods.agent.session.setConfigOption,
+        {
+          sessionId: this.sessionId,
+          configId,
+          value
+        }
+      );
+      this.emit({ type: "config-options", options: extractConfigOptions(result.configOptions) });
+    } catch (error) {
+      this.fail(error);
     }
   }
 
@@ -239,4 +276,49 @@ export function resolveWorkBuddyExecutable(configuredPath: string): string | nul
 function withLocalBinOnPath(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const paths = [join(homedir(), ".local", "bin"), "/opt/homebrew/bin", "/usr/local/bin"];
   return { ...env, PATH: `${paths.join(":")}:${env.PATH ?? ""}` };
+}
+
+/**
+ * 把 ACP 的 SessionConfigOption[] 折叠成前端可用的 ConfigOptionState[]。
+ * 只保留 select 类型（含模型选择），options 可能是平铺选项或分组，统一扁平化。
+ */
+function extractConfigOptions(raw: unknown): ConfigOptionState[] {
+  if (!Array.isArray(raw)) return [];
+  const result: ConfigOptionState[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const opt = entry as Record<string, unknown>;
+    if (opt.type !== "select") continue;
+    if (typeof opt.id !== "string" || typeof opt.currentValue !== "string") continue;
+    result.push({
+      id: opt.id,
+      name: typeof opt.name === "string" ? opt.name : opt.id,
+      category: typeof opt.category === "string" ? opt.category : "",
+      currentValue: opt.currentValue,
+      options: flattenSelectOptions(opt.options)
+    });
+  }
+  return result;
+}
+
+function flattenSelectOptions(raw: unknown): ModelOption[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ModelOption[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const e = entry as Record<string, unknown>;
+    if (typeof e.value === "string" && typeof e.name === "string") {
+      out.push({ value: e.value, name: e.name, description: typeof e.description === "string" ? e.description : null });
+    } else if (Array.isArray(e.options)) {
+      for (const sub of e.options) {
+        if (sub && typeof sub === "object") {
+          const s = sub as Record<string, unknown>;
+          if (typeof s.value === "string" && typeof s.name === "string") {
+            out.push({ value: s.value, name: s.name, description: typeof s.description === "string" ? s.description : null });
+          }
+        }
+      }
+    }
+  }
+  return out;
 }

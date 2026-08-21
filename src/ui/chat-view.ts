@@ -3,6 +3,7 @@ import {
   Menu,
   MarkdownRenderer,
   MarkdownView,
+  Modal,
   Notice,
   TFile,
   getAllTags,
@@ -19,7 +20,6 @@ import {
   buildChatMarkdown,
   buildFullTaskMarkdown,
   selectMessages,
-  type ProjectContextPack,
   type StoredChatMessage,
   type StoredSelection,
   type StoredToolActivity,
@@ -44,9 +44,9 @@ import {
 } from "../core/source-links";
 import type { WorkBuddyClient } from "../core/workbuddy-client";
 import { filterWorkTemplates, type WorkTemplate } from "../core/work-templates";
-import type { AttachedContext, RuntimeEvent, RuntimeStatus, WorkMode } from "../types";
+import { DEFAULT_SETTINGS, type AttachedContext, type ConfigOptionState, type PromptImage, type QuickAction, type RuntimeEvent, type RuntimeStatus, type WorkMode } from "../types";
 import { ContextSuggestModal, type ContextSuggestItem } from "./context-suggest-modal";
-import { ContextPackModal, RelatedNotesModal } from "./context-management-modals";
+import { RelatedNotesModal } from "./context-management-modals";
 import { PermissionModal } from "./permission-modal";
 import {
   ChatHistoryModal,
@@ -57,6 +57,14 @@ import {
 } from "./task-modals";
 
 export const WORKBUDDY_VIEW_TYPE = "workbuddy-for-obsidian-chat";
+
+const BUILTIN_QUICK_ACTIONS: QuickAction[] = [
+  { name: "正式润色", prompt: "请把以下内容改写为正式、得体的书面表达，保持原意、事实和数据不变：" },
+  { name: "口语润色", prompt: "请把以下内容改写为更自然、口语化的表达，保持原意、事实和数据不变：" },
+  { name: "一键翻译", prompt: "请把以下内容翻译为英文（如果已是英文则翻译为中文），保留格式、术语和专有名词：" },
+  { name: "代码审查", prompt: "请审查以下代码，指出潜在的 bug、性能问题、安全隐患和可读性建议，并给出改进版本：" },
+  { name: "笔记整理", prompt: "请把以下笔记内容整理为层次分明、结构清晰的笔记，保留所有关键信息，补充缺失的层级标题：" }
+];
 
 interface SelectionSnapshot extends StoredSelection {
   view?: MarkdownView;
@@ -80,16 +88,10 @@ interface WorkBuddyTask {
   currentAssistantText: string;
   currentTurnSources: StoredSourceReference[];
   currentTurnTools: Map<string, StoredToolActivity>;
+  pendingImages: PromptImage[];
+  configOptions: ConfigOptionState[];
   needsHistoryContext: boolean;
   unsubscribeRuntime: () => void;
-}
-
-interface UndoEdit {
-  path: string;
-  from: EditorPosition;
-  toAfter: EditorPosition;
-  original: string;
-  replacement: string;
 }
 
 export class WorkBuddyChatView extends ItemView {
@@ -106,13 +108,16 @@ export class WorkBuddyChatView extends ItemView {
   private sendButton!: HTMLButtonElement;
   private stopButton!: HTMLButtonElement;
   private contextEl!: HTMLElement;
-  private undoButton!: HTMLButtonElement;
   private relatedButton!: HTMLButtonElement;
   private slashMenuEl!: HTMLElement;
+  private imagePreviewEl!: HTMLElement;
+  private modelSelectWrap!: HTMLElement;
+  private modelSelectEl!: HTMLSelectElement;
+  private quickActionsButton!: HTMLButtonElement;
+  private quickActionsPopover!: HTMLElement;
+  private documentClickHandler: ((event: MouseEvent) => void) | null = null;
   private lastMarkdownView: MarkdownView | null = null;
   private closedChats: StoredWorkBuddyTask[] = [];
-  private contextPacks: ProjectContextPack[] = [];
-  private lastEdit: UndoEdit | null = null;
   private persistTimer: number | null = null;
   private messageSequence = 1;
   private selectionCaptureTimer: number | null = null;
@@ -137,6 +142,7 @@ export class WorkBuddyChatView extends ItemView {
     const container = this.containerEl.children[1] as HTMLElement;
     container.empty();
     container.addClass("workbuddy-view");
+    this.applyThemeColor();
 
     this.renderHeader(container);
     this.renderTaskBar(container);
@@ -145,7 +151,6 @@ export class WorkBuddyChatView extends ItemView {
     const saved = this.plugin.getWorkspaceState();
     this.nextTaskId = saved.nextTaskId;
     this.closedChats = saved.closedChats;
-    this.contextPacks = saved.contextPacks;
     for (const storedTask of saved.tasks) await this.addTask(false, storedTask);
     if (this.tasks.length === 0) await this.addTask(false);
     else this.switchTask(saved.activeTaskId || this.tasks[0]!.id);
@@ -173,11 +178,25 @@ export class WorkBuddyChatView extends ItemView {
     );
     this.captureSelection();
     this.refreshRelatedCount();
+
+    this.documentClickHandler = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (this.quickActionsPopover?.hidden) return;
+      if (this.quickActionsPopover?.contains(target)) return;
+      if (this.quickActionsButton?.contains(target)) return;
+      this.quickActionsPopover.hidden = true;
+    };
+    document.addEventListener("mousedown", this.documentClickHandler, true);
   }
 
   async onClose(): Promise<void> {
     if (this.selectionCaptureTimer !== null) window.clearTimeout(this.selectionCaptureTimer);
     if (this.persistTimer !== null) window.clearTimeout(this.persistTimer);
+    if (this.documentClickHandler) {
+      document.removeEventListener("mousedown", this.documentClickHandler, true);
+      this.documentClickHandler = null;
+    }
     await this.persistWorkspace();
     for (const task of this.tasks) {
       task.unsubscribeRuntime();
@@ -224,6 +243,8 @@ export class WorkBuddyChatView extends ItemView {
       currentAssistantText: "",
       currentTurnSources: [],
       currentTurnTools: new Map(),
+      pendingImages: [],
+      configOptions: [],
       needsHistoryContext: Boolean(storedTask?.messages.length),
       unsubscribeRuntime: () => undefined
     };
@@ -235,6 +256,10 @@ export class WorkBuddyChatView extends ItemView {
 
     if (showNotice) new Notice("已新增任务 " + task.title);
     this.schedulePersist();
+    // 预热连接：让模型/权限等 config options 尽早到达，打开页面就能看到模型下拉
+    void runtime.connect().catch(() => {
+      // 静默失败：保留 disconnected 状态，由占位文案提示；用户发送时会重试
+    });
   }
 
   private renderHeader(container: HTMLElement): void {
@@ -250,10 +275,27 @@ export class WorkBuddyChatView extends ItemView {
       attr: { "aria-label": "打开设置" }
     });
     setIcon(settings, "settings");
-    settings.addEventListener("click", () => {
-      const appWithSettings = this.app as typeof this.app & { setting?: { open(): void; openTabById(id: string): void } };
-      appWithSettings.setting?.open();
-      appWithSettings.setting?.openTabById(this.plugin.manifest.id);
+    settings.addEventListener("click", (event) => {
+      const menu = new Menu();
+      const hasPrompt = this.plugin.settings.systemPrompt.trim().length > 0;
+      menu.addItem((item) =>
+        item
+          .setTitle(hasPrompt ? "人设（已设置）" : "人设（常驻指令）")
+          .setIcon(hasPrompt ? "badge-check" : "user")
+          .onClick(() => this.openSystemPromptEditor())
+      );
+      menu.addSeparator();
+      menu.addItem((item) =>
+        item
+          .setTitle("插件设置")
+          .setIcon("settings-2")
+          .onClick(() => {
+            const appWithSettings = this.app as typeof this.app & { setting?: { open(): void; openTabById(id: string): void } };
+            appWithSettings.setting?.open();
+            appWithSettings.setting?.openTabById(this.plugin.manifest.id);
+          })
+      );
+      menu.showAtMouseEvent(event);
     });
   }
 
@@ -322,6 +364,8 @@ export class WorkBuddyChatView extends ItemView {
     this.renderTaskTabs();
     this.refreshContextPills();
     this.refreshActiveStatus();
+    this.renderImagePreview(next);
+    this.refreshModelSelector();
     this.scrollToBottom(next);
     this.schedulePersist();
   }
@@ -344,21 +388,35 @@ export class WorkBuddyChatView extends ItemView {
     this.slashMenuEl = composer.createDiv({ cls: "workbuddy-slash-menu" });
     this.slashMenuEl.hidden = true;
 
+    this.imagePreviewEl = composer.createDiv({ cls: "workbuddy-image-preview" });
+    this.imagePreviewEl.hidden = true;
+
     this.inputEl = composer.createEl("textarea", {
       cls: "workbuddy-input",
-      attr: { placeholder: "描述要让 WorkBuddy 完成的工作…", rows: "3" }
+      attr: { placeholder: "描述要让 WorkBuddy 完成的工作…  粘贴/拖入图片可直接分析；# 编辑常驻指令", rows: "3" }
     });
     this.inputEl.addEventListener("input", () => {
       const task = this.getActiveTask();
       if (task) task.inputDraft = this.inputEl.value;
-      if (/(^|\s)@$/.test(this.inputEl.value)) {
-        this.inputEl.value = this.inputEl.value.slice(0, -1);
+      const value = this.inputEl.value;
+      if (/(^|\s)@$/.test(value)) {
+        this.inputEl.value = value.slice(0, -1);
         if (task) task.inputDraft = this.inputEl.value;
         this.openContextPicker();
+      }
+      if (/^#/.test(value)) {
+        this.inputEl.value = "";
+        if (task) task.inputDraft = "";
+        this.openSystemPromptEditor();
       }
       this.refreshSlashMenu();
       this.schedulePersist();
     });
+    this.inputEl.addEventListener("paste", (event) => this.handleImagePaste(event));
+    this.inputEl.addEventListener("dragover", (event) => {
+      if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
+    });
+    this.inputEl.addEventListener("drop", (event) => this.handleImageDrop(event));
     this.inputEl.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && !this.slashMenuEl.hidden) {
         event.preventDefault();
@@ -380,29 +438,40 @@ export class WorkBuddyChatView extends ItemView {
     });
 
     const toolbar = composer.createDiv({ cls: "workbuddy-composer-toolbar" });
-    const attach = toolbar.createEl("button", { text: "@ 添加资料", cls: "workbuddy-secondary-button" });
-    attach.addEventListener("click", () => this.openContextPicker());
+    const leadingTools = toolbar.createDiv({ cls: "workbuddy-composer-leading" });
 
-    const packs = toolbar.createEl("button", { text: "资料包", cls: "workbuddy-secondary-button" });
-    packs.addEventListener("click", () => this.openContextPacks());
+    this.modelSelectWrap = leadingTools.createDiv({ cls: "workbuddy-model-select" });
+    const modelIcon = this.modelSelectWrap.createSpan({ cls: "workbuddy-model-select-icon" });
+    setIcon(modelIcon, "cpu");
+    this.modelSelectEl = this.modelSelectWrap.createEl("select", { cls: "workbuddy-model-select-input dropdown" });
+    this.modelSelectEl.disabled = true;
+    this.modelSelectEl.createEl("option", { text: "默认模型", value: "" });
+    this.modelSelectEl.addEventListener("change", () => void this.onModelChange());
+
+    const attach = toolbar.createEl("button", { text: "@ 资料", cls: "workbuddy-secondary-button" });
+    attach.addEventListener("click", () => this.openContextPicker());
 
     this.relatedButton = toolbar.createEl("button", { text: "关联资料", cls: "workbuddy-secondary-button" });
     this.relatedButton.addEventListener("click", () => this.openRelatedNotes());
 
-    this.undoButton = toolbar.createEl("button", {
-      text: "撤销修改",
-      cls: "workbuddy-secondary-button",
-      attr: { title: "撤销最近一次由 WorkBuddy 插入或替换的内容" }
-    });
-    this.undoButton.disabled = true;
-    this.undoButton.addEventListener("click", () => this.undoLastEdit());
-
     const actions = toolbar.createDiv({ cls: "workbuddy-send-actions" });
-    this.stopButton = actions.createEl("button", { text: "停止", cls: "workbuddy-stop-button" });
+    this.quickActionsButton = actions.createEl("button", {
+      text: "快捷",
+      cls: "workbuddy-secondary-button workbuddy-quick-actions-toggle",
+      attr: { "aria-label": "快捷指令", title: "快捷指令（带选区）" }
+    });
+    this.quickActionsButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.toggleQuickActions();
+    });
+    this.stopButton = actions.createEl("button", { text: "停止", cls: "workbuddy-stop-button", attr: { "aria-label": "停止" } });
     this.stopButton.hidden = true;
     this.stopButton.addEventListener("click", () => void this.getActiveTask()?.runtime.cancel());
     this.sendButton = actions.createEl("button", { text: "发送", cls: "mod-cta workbuddy-send-button" });
     this.sendButton.addEventListener("click", () => void this.send());
+
+    this.quickActionsPopover = composer.createDiv({ cls: "workbuddy-quick-actions-popover" });
+    this.quickActionsPopover.hidden = true;
   }
 
   private openContextPicker(): void {
@@ -480,59 +549,6 @@ export class WorkBuddyChatView extends ItemView {
     } catch (error) {
       new Notice("上传本地文件失败：" + readError(error), 8_000);
     }
-  }
-
-  private openContextPacks(): void {
-    const task = this.getActiveTask();
-    if (!task) return;
-    new ContextPackModal(
-      this.app,
-      this.contextPacks,
-      task.attachedFiles.size + task.contextReferences.size,
-      (name) => this.saveCurrentContextPack(task, name),
-      (pack) => this.applyContextPack(task, pack),
-      (pack) => this.deleteContextPack(pack)
-    ).open();
-  }
-
-  private saveCurrentContextPack(task: WorkBuddyTask, name: string): void {
-    const now = Date.now();
-    const existing = this.contextPacks.find((pack) => pack.name.toLowerCase() === name.toLowerCase());
-    const pack: ProjectContextPack = {
-      id: existing?.id ?? `pack-${now}`,
-      name,
-      attachedPaths: [...task.attachedFiles.keys()],
-      contextReferences: [...task.contextReferences.values()].map((reference) => ({ ...reference })),
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now
-    };
-    this.contextPacks = [pack, ...this.contextPacks.filter((item) => item.id !== pack.id)].slice(0, 50);
-    this.schedulePersist();
-    new Notice(existing ? `已更新资料包：“${name}”` : `已保存资料包：“${name}”`);
-  }
-
-  private applyContextPack(task: WorkBuddyTask, pack: ProjectContextPack): void {
-    let added = 0;
-    for (const path of pack.attachedPaths) {
-      const file = this.app.vault.getAbstractFileByPath(path);
-      if (!(file instanceof TFile) || task.attachedFiles.has(path)) continue;
-      task.attachedFiles.set(path, file);
-      added++;
-    }
-    for (const reference of pack.contextReferences) {
-      if (task.contextReferences.has(reference.id)) continue;
-      task.contextReferences.set(reference.id, { ...reference });
-      added++;
-    }
-    this.refreshContextPills();
-    this.schedulePersist();
-    new Notice(`已应用“${pack.name}”，新增 ${added} 项资料`);
-  }
-
-  private deleteContextPack(pack: ProjectContextPack): void {
-    this.contextPacks = this.contextPacks.filter((item) => item.id !== pack.id);
-    this.schedulePersist();
-    new Notice(`已删除资料包：“${pack.name}”`);
   }
 
   private openRelatedNotes(): void {
@@ -641,12 +657,16 @@ export class WorkBuddyChatView extends ItemView {
   private async send(): Promise<void> {
     const task = this.getActiveTask();
     const input = this.inputEl.value.trim();
-    if (!task || !input || task.status === "working" || task.status === "connecting") return;
+    if (!task || task.status === "working" || task.status === "connecting") return;
+    const images = [...task.pendingImages];
+    if (!input && images.length === 0) return;
 
     this.captureSelection();
-    this.appendUserMessage(task, input);
+    this.appendUserMessage(task, input || (images.length ? `（发送了 ${images.length} 张图片）` : ""));
     this.inputEl.value = "";
     task.inputDraft = "";
+    task.pendingImages = [];
+    this.renderImagePreview(task);
     const contexts = await this.collectContexts(task);
     task.currentTurnSources = dedupeSources(contexts.map((context) => ({
       kind: "vault" as const,
@@ -656,6 +676,10 @@ export class WorkBuddyChatView extends ItemView {
     }))).slice(0, 20);
     task.currentTurnSelection = task.selectionSnapshot ? { ...task.selectionSnapshot } : null;
     let prompt = buildWorkBuddyPrompt(input, this.mode, contexts, this.plugin.settings.maxContextChars);
+    const systemPrompt = this.plugin.settings.systemPrompt.trim();
+    if (systemPrompt) {
+      prompt = `以下是用户的常驻指令，请在本次及后续对话中遵循：\n${systemPrompt}\n\n${prompt}`;
+    }
     if (task.needsHistoryContext) {
       const history = buildHistoryContext(task.messages.slice(0, -1));
       if (history) prompt += "\n\n以下是这个恢复任务的历史对话，请延续上下文：\n" + history;
@@ -667,7 +691,7 @@ export class WorkBuddyChatView extends ItemView {
     task.runtime.setMode(this.mode);
 
     try {
-      await task.runtime.prompt(prompt);
+      await task.runtime.prompt(prompt, images);
     } catch (error) {
       new Notice("WorkBuddy 执行失败：" + readError(error), 8_000);
     }
@@ -782,6 +806,7 @@ export class WorkBuddyChatView extends ItemView {
       label.createSpan({ text: "WorkBuddy" });
       const body = wrapper.createDiv({ cls: "workbuddy-message-body" });
       await MarkdownRenderer.render(this.app, message.text, body, message.selection?.path ?? "", this);
+      this.linkifyVaultFiles(body);
       this.renderToolActivities(wrapper, message.toolActivities ?? []);
       this.renderSources(wrapper, message.sources ?? []);
       this.renderResponseActions(task, wrapper, message.text, message.selection ?? null, message);
@@ -811,6 +836,10 @@ export class WorkBuddyChatView extends ItemView {
       case "turn-stop":
         await this.finalizeAssistant(task, event.reason);
         break;
+      case "config-options":
+        task.configOptions = event.options;
+        this.refreshModelSelector();
+        break;
       case "error":
         this.appendError(task, event.message);
         break;
@@ -832,9 +861,13 @@ export class WorkBuddyChatView extends ItemView {
     this.statusEl.empty();
     this.statusEl.createSpan({ cls: "workbuddy-status-dot is-" + task.status });
     this.statusEl.createSpan({ text: task.statusDetail });
-    if (this.sendButton) this.sendButton.disabled = task.status === "working" || task.status === "connecting";
-    if (this.stopButton) this.stopButton.hidden = task.status !== "working";
-    if (this.closeTaskButton) this.closeTaskButton.disabled = task.status === "working" || task.status === "connecting";
+    const isWorking = task.status === "working";
+    if (this.sendButton) {
+      this.sendButton.hidden = isWorking;
+      this.sendButton.disabled = task.status === "connecting";
+    }
+    if (this.stopButton) this.stopButton.hidden = !isWorking;
+    if (this.closeTaskButton) this.closeTaskButton.disabled = isWorking || task.status === "connecting";
   }
 
   private appendThought(task: WorkBuddyTask, text: string): void {
@@ -900,8 +933,12 @@ export class WorkBuddyChatView extends ItemView {
     if (text) {
       const sourcePath = task.currentTurnSelection?.path ?? this.app.workspace.getActiveFile()?.path ?? "";
       await MarkdownRenderer.render(this.app, text, body, sourcePath, this);
+      this.linkifyVaultFiles(body);
     } else {
       body.setText("本轮结束：" + reason);
+    }
+    if (/cancel|interrupt|stop/i.test(reason)) {
+      body.createDiv({ cls: "workbuddy-stopped-hint", text: "已停止" });
     }
     const message = body.parentElement ?? body;
     const sources = dedupeSources([
@@ -940,6 +977,7 @@ export class WorkBuddyChatView extends ItemView {
     if (!text) return;
     const actions = message.createDiv({ cls: "workbuddy-response-actions" });
     this.createAction(actions, "copy", "复制", () => void navigator.clipboard.writeText(text));
+    this.createAction(actions, "text-cursor", "复制选中", () => this.copySelectionInMessage(message));
     if (storedMessage) {
       const favorite = this.createAction(actions, "star", storedMessage.favorite ? "取消收藏" : "收藏回答", () => {
         storedMessage.favorite = !storedMessage.favorite;
@@ -1031,14 +1069,6 @@ export class WorkBuddyChatView extends ItemView {
     }
     const cursor = selection?.to ?? view.editor.getCursor("to");
     view.editor.replaceRange(text, cursor);
-    this.lastEdit = {
-      path: view.file?.path ?? selection?.path ?? "",
-      from: cursor,
-      toAfter: advancePosition(cursor, text),
-      original: "",
-      replacement: text
-    };
-    this.refreshUndoButton();
     view.editor.focus();
     new Notice("已插入：" + (view.file?.path ?? "当前笔记"));
   }
@@ -1066,44 +1096,13 @@ export class WorkBuddyChatView extends ItemView {
         return;
       }
       view.editor.replaceRange(text, selection.from!, selection.to!);
-      this.lastEdit = {
-        path: selection.path,
-        from: selection.from!,
-        toAfter: advancePosition(selection.from!, text),
-        original: selection.text,
-        replacement: text
-      };
-      this.refreshUndoButton();
       view.editor.focus();
       if (task.selectionSnapshot?.path === selection.path && task.selectionSnapshot.text === selection.text) {
         task.selectionSnapshot = null;
         if (task.id === this.activeTaskId) this.refreshContextPills();
       }
-      new Notice("已替换原选区，可用“撤销修改”恢复");
+      new Notice("已替换原选区");
     }).open();
-  }
-
-  private undoLastEdit(): void {
-    const edit = this.lastEdit;
-    if (!edit) return;
-    const view = this.findViewByPath(edit.path);
-    if (!view) {
-      new Notice("请先打开被修改的笔记再撤销");
-      return;
-    }
-    if (view.editor.getRange(edit.from, edit.toAfter) !== edit.replacement) {
-      new Notice("修改位置的内容已经变化，为避免误覆盖，未执行撤销", 6_000);
-      return;
-    }
-    view.editor.replaceRange(edit.original, edit.from, edit.toAfter);
-    view.editor.focus();
-    this.lastEdit = null;
-    this.refreshUndoButton();
-    new Notice("已撤销 WorkBuddy 的最近一次修改");
-  }
-
-  private refreshUndoButton(): void {
-    if (this.undoButton) this.undoButton.disabled = this.lastEdit === null;
   }
 
   private async saveAsNote(text: string): Promise<void> {
@@ -1375,8 +1374,7 @@ export class WorkBuddyChatView extends ItemView {
       activeTaskId: this.activeTaskId,
       nextTaskId: this.nextTaskId,
       tasks: this.tasks.map((task) => this.snapshotTask(task)),
-      closedChats: this.closedChats,
-      contextPacks: this.contextPacks
+      closedChats: this.closedChats
     };
     await this.plugin.saveWorkspaceState(state);
   }
@@ -1422,6 +1420,303 @@ export class WorkBuddyChatView extends ItemView {
       task.messagesEl.scrollTo({ top: task.messagesEl.scrollHeight, behavior: "smooth" })
     );
   }
+
+  private applyThemeColor(): void {
+    const color = this.plugin.settings.themeColor || DEFAULT_SETTINGS.themeColor;
+    (this.containerEl as HTMLElement).style.setProperty("--wb-blue", color);
+  }
+
+  private openSystemPromptEditor(): void {
+    const modal = new Modal(this.app);
+    modal.titleEl.setText("常驻指令（人设）");
+    modal.contentEl.createEl("p", {
+      cls: "workbuddy-modal-desc",
+      text: "对所有对话生效。留空则不附加。每次发送时自动拼接到任务前。"
+    });
+    const textarea = modal.contentEl.createEl("textarea", { cls: "workbuddy-system-prompt-textarea" });
+    textarea.value = this.plugin.settings.systemPrompt;
+    textarea.rows = 6;
+    const actions = modal.contentEl.createDiv({ cls: "workbuddy-modal-actions" });
+    const save = actions.createEl("button", { text: "保存", cls: "mod-cta" });
+    save.addEventListener("click", async () => {
+      this.plugin.settings.systemPrompt = textarea.value;
+      await this.plugin.saveSettings();
+      modal.close();
+    });
+    actions.createEl("button", { text: "清空" }).addEventListener("click", async () => {
+      textarea.value = "";
+      this.plugin.settings.systemPrompt = "";
+      await this.plugin.saveSettings();
+      modal.close();
+    });
+    modal.open();
+  }
+
+  private toggleQuickActions(): void {
+    if (!this.quickActionsPopover) return;
+    const willShow = this.quickActionsPopover.hidden;
+    this.quickActionsPopover.hidden = !willShow;
+    if (willShow) this.renderQuickActionsList();
+  }
+
+  private renderQuickActionsList(): void {
+    if (!this.quickActionsPopover) return;
+    this.quickActionsPopover.empty();
+    const builtin = BUILTIN_QUICK_ACTIONS;
+    const custom = this.plugin.settings.customQuickActions.filter((a) => a.name.trim() || a.prompt.trim());
+    const all: Array<QuickAction & { builtin: boolean }> = [
+      ...builtin.map((a) => ({ ...a, builtin: true })),
+      ...custom.map((a) => ({ ...a, builtin: false }))
+    ];
+    if (all.length === 0) {
+      this.quickActionsPopover.createDiv({
+        cls: "workbuddy-quick-actions-empty",
+        text: "暂无指令，去设置添加自定义项。"
+      });
+    }
+    for (const action of all) {
+      const item = this.quickActionsPopover.createEl("button", {
+        cls: "workbuddy-quick-actions-item" + (action.builtin ? " is-builtin" : " is-custom"),
+        attr: { title: action.prompt }
+      });
+      item.createSpan({ cls: "workbuddy-quick-actions-label", text: action.name });
+      if (!action.builtin) {
+        item.createSpan({ cls: "workbuddy-quick-actions-tag", text: "自定义" });
+      }
+      item.addEventListener("click", () => {
+        this.quickActionsPopover.hidden = true;
+        void this.runQuickAction(action.prompt, true);
+      });
+    }
+    const manage = this.quickActionsPopover.createEl("button", {
+      cls: "workbuddy-quick-actions-manage",
+      text: "管理自定义指令…"
+    });
+    manage.addEventListener("click", () => {
+      this.quickActionsPopover.hidden = true;
+      const appAny = this.app as unknown as {
+        setting?: { open: () => void; openTabById: (id: string) => void };
+        commands?: { executeCommandById: (id: string) => void };
+      };
+      if (appAny.setting) {
+        try {
+          appAny.setting.open();
+          appAny.setting.openTabById(this.plugin.manifest.id);
+          return;
+        } catch {
+          /* fall through to command */
+        }
+      }
+      appAny.commands?.executeCommandById("app:open-settings");
+    });
+  }
+
+  public async runQuickAction(prompt: string, withSelection: boolean): Promise<void> {
+    if (this.tasks.length === 0) await this.addTask(false);
+    const task = this.getActiveTask();
+    if (!task) return;
+    let finalInput = prompt;
+    if (withSelection) {
+      const view = this.lastMarkdownView;
+      const sel = view?.editor?.getSelection().trim() ?? "";
+      if (sel) finalInput = `${prompt}\n\n引用内容：\n${sel}`;
+    }
+    this.inputEl.value = finalInput;
+    task.inputDraft = finalInput;
+    await this.send();
+  }
+
+  private refreshModelSelector(): void {
+    if (!this.modelSelectEl) return;
+    const task = this.getActiveTask();
+    const modelOption = task?.configOptions.find((opt) => opt.category === "model" && opt.options.length > 0);
+    this.modelSelectEl.empty();
+    // 始终显示：即便 configOptions 还没到达也给一个占位选项，让用户看到模型选择入口
+    this.modelSelectWrap.hidden = false;
+
+    if (!modelOption) {
+      this.modelSelectEl.disabled = true;
+      const placeholder = this.modelSelectorPlaceholder(task);
+      this.modelSelectEl.createEl("option", { text: placeholder.text, value: "" });
+      this.modelSelectWrap.title = placeholder.title;
+      this.modelSelectEl.dataset.configId = "";
+      return;
+    }
+
+    this.modelSelectEl.disabled = false;
+    this.modelSelectWrap.title = "切换 WorkBuddy 模型";
+    // 顶部追加 Auto（自动选择）选项，与 WorkBuddy 内的 auto 行为对齐
+    const hasAuto = modelOption.options.some((option) => option.value.toLowerCase() === "auto");
+    if (!hasAuto) {
+      this.modelSelectEl.createEl("option", {
+        text: "Auto（自动选择）",
+        value: "auto",
+        attr: modelOption.currentValue.toLowerCase() === "auto" ? { selected: "true" } : undefined
+      });
+    }
+    for (const option of modelOption.options) {
+      this.modelSelectEl.createEl("option", {
+        text: option.name,
+        value: option.value,
+        attr: option.value === modelOption.currentValue ? { selected: "true" } : undefined
+      });
+    }
+    this.modelSelectEl.dataset.configId = modelOption.id;
+  }
+
+  private modelSelectorPlaceholder(task: WorkBuddyTask | null): { text: string; title: string } {
+    if (!task) return { text: "默认模型", title: "暂无任务" };
+    switch (task.status) {
+      case "connecting":
+        return { text: "连接中…", title: "WorkBuddy 正在连接，加载模型列表" };
+      case "error":
+        return { text: "连接失败", title: "WorkBuddy 连接失败，发送消息时会自动重试" };
+      case "disconnected":
+        return { text: "默认模型", title: "首次发送时会自动连接 WorkBuddy 并加载模型列表" };
+      default:
+        return { text: "默认模型", title: "WorkBuddy 模型列表加载中" };
+    }
+  }
+
+  private async onModelChange(): Promise<void> {
+    const task = this.getActiveTask();
+    const configId = this.modelSelectEl.dataset.configId;
+    if (!task || !configId) return;
+    const value = this.modelSelectEl.value;
+    if (!value) return;
+    await task.runtime.setConfigOption(configId, value);
+  }
+
+  private handleImagePaste(event: ClipboardEvent): void {
+    const files = event.clipboardData?.files;
+    if (!files || files.length === 0) return;
+    const task = this.getActiveTask();
+    if (!task) return;
+    let handled = false;
+    for (const file of Array.from(files)) {
+      if (file.type.startsWith("image/")) {
+        if (!handled) event.preventDefault();
+        handled = true;
+        void this.addPendingImage(task, file);
+      }
+    }
+  }
+
+  private handleImageDrop(event: DragEvent): void {
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+    const images = Array.from(files).filter((file) => file.type.startsWith("image/"));
+    if (images.length === 0) return;
+    event.preventDefault();
+    const task = this.getActiveTask();
+    if (!task) return;
+    for (const file of images) void this.addPendingImage(task, file);
+  }
+
+  private async addPendingImage(task: WorkBuddyTask, file: File): Promise<void> {
+    try {
+      const data = await readImageAsBase64(file);
+      task.pendingImages.push({ data, mimeType: file.type, name: file.name });
+      this.renderImagePreview(task);
+    } catch {
+      new Notice("无法读取图片：" + file.name, 6_000);
+    }
+  }
+
+  private renderImagePreview(task: WorkBuddyTask): void {
+    if (!this.imagePreviewEl) return;
+    this.imagePreviewEl.empty();
+    if (task.pendingImages.length === 0) {
+      this.imagePreviewEl.hidden = true;
+      return;
+    }
+    this.imagePreviewEl.hidden = false;
+    for (let index = 0; index < task.pendingImages.length; index++) {
+      const image = task.pendingImages[index]!;
+      const chip = this.imagePreviewEl.createDiv({ cls: "workbuddy-image-chip" });
+      const img = chip.createEl("img", { attr: { src: `data:${image.mimeType};base64,${image.data}`, alt: image.name ?? "图片" } });
+      img.loading = "lazy";
+      const remove = chip.createEl("button", { text: "×", cls: "workbuddy-image-remove", attr: { "aria-label": "移除图片" } });
+      const currentIndex = index;
+      remove.addEventListener("click", () => {
+        task.pendingImages.splice(currentIndex, 1);
+        this.renderImagePreview(task);
+      });
+    }
+  }
+
+  private linkifyVaultFiles(body: HTMLElement): void {
+    const files = this.app.vault.getFiles();
+    if (files.length === 0) return;
+    const byName = new Map<string, string[]>();
+    for (const file of files) {
+      const list = byName.get(file.name) ?? [];
+      list.push(file.path);
+      byName.set(file.name, list);
+    }
+    const names = [...byName.keys()].filter((name) => name.length >= 3).sort((a, b) => b.length - a.length);
+    if (names.length === 0) return;
+    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest("a, code, pre, .workbuddy-source-link, .workbuddy-inline-file-link")) return NodeFilter.FILTER_REJECT;
+        return node.nodeValue && node.nodeValue.trim().length >= 3 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    const targets: Array<{ node: Text; name: string }> = [];
+    let current = walker.nextNode();
+    while (current) {
+      if (current.nodeType === Node.TEXT_NODE) {
+        const textNode = current as Text;
+        for (const name of names) {
+          if (textNode.nodeValue && textNode.nodeValue.includes(name)) {
+            targets.push({ node: textNode, name });
+            break;
+          }
+        }
+      }
+      current = walker.nextNode();
+    }
+    for (const { node, name } of targets) {
+      const value = node.nodeValue ?? "";
+      const paths = byName.get(name) ?? [];
+      const fragment = document.createDocumentFragment();
+      let lastIndex = 0;
+      const lower = value.toLowerCase();
+      const needle = name.toLowerCase();
+      let pos = lower.indexOf(needle);
+      while (pos !== -1) {
+        if (pos > lastIndex) fragment.appendChild(document.createTextNode(value.slice(lastIndex, pos)));
+        const link = document.createElement("a");
+        link.textContent = name;
+        link.className = "workbuddy-inline-file-link internal-link";
+        link.setAttribute("href", "#");
+        const targetPath = paths[0]!;
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          void this.openVaultPath(targetPath);
+        });
+        fragment.appendChild(link);
+        lastIndex = pos + name.length;
+        pos = lower.indexOf(needle, lastIndex);
+      }
+      if (lastIndex < value.length) fragment.appendChild(document.createTextNode(value.slice(lastIndex)));
+      node.parentNode?.replaceChild(fragment, node);
+    }
+  }
+
+  private copySelectionInMessage(message: HTMLElement): void {
+    const body = message.querySelector<HTMLElement>(".workbuddy-message-body");
+    const sel = window.getSelection();
+    const text = sel && sel.rangeCount > 0 && body && sel.anchorNode && body.contains(sel.anchorNode) ? sel.toString() : "";
+    if (text.trim()) {
+      void navigator.clipboard.writeText(text);
+      new Notice("已复制选中内容");
+    } else {
+      new Notice("请先在该回答中选中要复制的部分");
+    }
+  }
 }
 
 function uniqueViews(views: Array<MarkdownView | null>): MarkdownView[] {
@@ -1451,12 +1746,6 @@ function cloneMessage(message: StoredChatMessage): StoredChatMessage {
     sources: message.sources?.map((source) => ({ ...source })),
     toolActivities: message.toolActivities?.map((activity) => ({ ...activity }))
   };
-}
-
-function advancePosition(start: EditorPosition, text: string): EditorPosition {
-  const lines = text.split("\n");
-  if (lines.length === 1) return { line: start.line, ch: start.ch + text.length };
-  return { line: start.line + lines.length - 1, ch: lines.at(-1)?.length ?? 0 };
 }
 
 function buildHistoryContext(messages: StoredChatMessage[], maxChars = 12_000): string {
@@ -1503,4 +1792,21 @@ function getElectronDialog(): WorkBuddyNativeDialog | null {
   } catch {
     return null;
   }
+}
+
+function readImageAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("无法读取图片"));
+        return;
+      }
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("读取图片失败"));
+    reader.readAsDataURL(file);
+  });
 }

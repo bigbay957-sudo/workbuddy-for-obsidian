@@ -1,6 +1,6 @@
 {
   "name": "workbuddy-for-obsidian",
-  "version": "0.7.3",
+  "version": "0.8.3",
   "private": true,
   "description": "在 Obsidian 侧边栏中使用 WorkBuddy 完成 AI 搜索、问答与 Agent 工作",
   "author": "bigbay",

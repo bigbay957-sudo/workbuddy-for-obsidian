@@ -1,7 +1,7 @@
 {
   "id": "workbuddy-for-obsidian",
   "name": "WorkBuddy for Obsidian",
-  "version": "0.7.3",
+  "version": "0.8.3",
   "minAppVersion": "1.7.2",
   "description": "在 Obsidian 侧边栏中接入 WorkBuddy，支持多任务、强引用、来源追溯、选区快捷处理和工作模板。",
   "author": "bigbay",

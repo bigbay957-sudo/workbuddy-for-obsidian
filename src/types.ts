@@ -1,5 +1,10 @@
 export type WorkMode = "search" | "ask" | "work" | "plan";
 
+export interface QuickAction {
+  name: string;
+  prompt: string;
+}
+
 export interface WorkBuddySettings {
   cliPath: string;
   model: string;
@@ -9,6 +14,9 @@ export interface WorkBuddySettings {
   maxContextChars: number;
   updateRepository: string;
   autoCheckUpdates: boolean;
+  themeColor: string;
+  systemPrompt: string;
+  customQuickActions: QuickAction[];
 }
 
 export const DEFAULT_SETTINGS: WorkBuddySettings = {
@@ -19,7 +27,10 @@ export const DEFAULT_SETTINGS: WorkBuddySettings = {
   autoAttachSelection: true,
   maxContextChars: 40_000,
   updateRepository: "bigbay957-sudo/workbuddy-for-obsidian",
-  autoCheckUpdates: false
+  autoCheckUpdates: false,
+  themeColor: "#2f6fec",
+  systemPrompt: "",
+  customQuickActions: []
 };
 
 export interface AttachedContext {
@@ -32,6 +43,26 @@ export interface AttachedContext {
 
 export type RuntimeStatus = "disconnected" | "connecting" | "ready" | "working" | "error";
 
+export interface ModelOption {
+  value: string;
+  name: string;
+  description?: string | null;
+}
+
+export interface ConfigOptionState {
+  id: string;
+  name: string;
+  category: string;
+  currentValue: string;
+  options: ModelOption[];
+}
+
+export interface PromptImage {
+  data: string;
+  mimeType: string;
+  name?: string;
+}
+
 export type RuntimeEvent =
   | { type: "status"; status: RuntimeStatus; detail?: string }
   | { type: "agent-text"; text: string }
@@ -40,6 +71,7 @@ export type RuntimeEvent =
   | { type: "plan"; text: string }
   | { type: "usage"; text: string }
   | { type: "turn-stop"; reason: string }
+  | { type: "config-options"; options: ConfigOptionState[] }
   | { type: "error"; message: string };
 
 export interface PermissionChoice {

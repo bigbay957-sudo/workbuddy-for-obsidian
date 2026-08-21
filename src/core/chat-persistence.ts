@@ -30,15 +30,6 @@ export interface StoredToolActivity {
   createdAt: number;
 }
 
-export interface ProjectContextPack {
-  id: string;
-  name: string;
-  attachedPaths: string[];
-  contextReferences: StoredContextReference[];
-  createdAt: number;
-  updatedAt: number;
-}
-
 export interface StoredWorkBuddyTask {
   id: string;
   title: string;
@@ -54,15 +45,13 @@ export interface WorkBuddyWorkspaceState {
   nextTaskId: number;
   tasks: StoredWorkBuddyTask[];
   closedChats: StoredWorkBuddyTask[];
-  contextPacks: ProjectContextPack[];
 }
 
 export const EMPTY_WORKSPACE_STATE: WorkBuddyWorkspaceState = {
   activeTaskId: "",
   nextTaskId: 1,
   tasks: [],
-  closedChats: [],
-  contextPacks: []
+  closedChats: []
 };
 
 export function normalizeWorkspaceState(raw: unknown, maxOpenTasks = 5, maxClosedChats = 100): WorkBuddyWorkspaceState {
@@ -79,10 +68,7 @@ export function normalizeWorkspaceState(raw: unknown, maxOpenTasks = 5, maxClose
   const nextTaskId = Number.isInteger(source.nextTaskId) && Number(source.nextTaskId) > 0
     ? Math.max(Number(source.nextTaskId), inferredNextTaskId)
     : inferredNextTaskId;
-  const contextPacks = Array.isArray(source.contextPacks)
-    ? source.contextPacks.map(normalizeContextPack).filter((pack): pack is ProjectContextPack => pack !== null).slice(0, 50)
-    : [];
-  return { activeTaskId, nextTaskId, tasks, closedChats, contextPacks };
+  return { activeTaskId, nextTaskId, tasks, closedChats };
 }
 
 export function addClosedChat(closedChats: StoredWorkBuddyTask[], task: StoredWorkBuddyTask, limit = 100): StoredWorkBuddyTask[] {
@@ -197,22 +183,6 @@ function normalizeToolActivity(raw: unknown): StoredToolActivity | null {
     status: typeof raw.status === "string" ? raw.status : undefined,
     detail: typeof raw.detail === "string" ? raw.detail : undefined,
     createdAt: typeof raw.createdAt === "number" ? raw.createdAt : Date.now()
-  };
-}
-
-function normalizeContextPack(raw: unknown): ProjectContextPack | null {
-  if (!isRecord(raw) || typeof raw.id !== "string" || typeof raw.name !== "string" || !raw.name.trim()) return null;
-  return {
-    id: raw.id,
-    name: raw.name.trim().slice(0, 60),
-    attachedPaths: Array.isArray(raw.attachedPaths)
-      ? [...new Set(raw.attachedPaths.filter((path): path is string => typeof path === "string"))]
-      : [],
-    contextReferences: Array.isArray(raw.contextReferences)
-      ? raw.contextReferences.map(normalizeContextReference).filter((reference): reference is StoredContextReference => reference !== null)
-      : [],
-    createdAt: typeof raw.createdAt === "number" ? raw.createdAt : Date.now(),
-    updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : Date.now()
   };
 }
 

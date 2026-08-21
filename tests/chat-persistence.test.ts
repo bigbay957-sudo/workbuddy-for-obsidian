@@ -52,7 +52,7 @@ describe("chat persistence", () => {
     expect(markdown).toContain("[[项目.md#结论|项目来源]]");
   });
 
-  it("restores context packs, favorites and tool activities", () => {
+  it("restores favorites and tool activities", () => {
     const state = normalizeWorkspaceState({
       tasks: [{
         ...task("task-1"),
@@ -61,17 +61,8 @@ describe("chat persistence", () => {
           favorite: true,
           toolActivities: [{ id: "tool-1", title: "读取文件", status: "完成", detail: "项目.md", createdAt: 1 }]
         }]
-      }],
-      contextPacks: [{
-        id: "pack-1",
-        name: "产品资料",
-        attachedPaths: ["项目.md", "项目.md"],
-        contextReferences: [{ id: "tag:#产品", kind: "tag", label: "#产品", tag: "#产品" }],
-        createdAt: 1,
-        updatedAt: 2
       }]
     });
-    expect(state.contextPacks[0]?.attachedPaths).toEqual(["项目.md"]);
     expect(state.tasks[0]?.messages[0]?.favorite).toBe(true);
     expect(state.tasks[0]?.messages[0]?.toolActivities?.[0]?.title).toBe("读取文件");
   });

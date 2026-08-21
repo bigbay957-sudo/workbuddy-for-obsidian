@@ -48,6 +48,18 @@ export class WorkBuddySettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("主题色")
+      .setDesc("侧边栏主色调，立即生效并保留。")
+      .addColorPicker((picker) =>
+        picker
+          .setValue(this.plugin.settings.themeColor)
+          .onChange(async (value) => {
+            this.plugin.settings.themeColor = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
       .setName("权限模式")
       .setDesc("推荐 default。插件不会启用 bypassPermissions。修改后重新连接生效。")
       .addDropdown((dropdown) =>
@@ -99,6 +111,36 @@ export class WorkBuddySettingTab extends PluginSettingTab {
           })
       );
 
+    new Setting(containerEl)
+      .setName("常驻指令")
+      .setDesc("对所有对话生效的人设或要求；可通过侧边栏右上角设置菜单或输入框 # 编辑。留空则不附加。")
+      .addTextArea((text) =>
+        text
+          .setPlaceholder("例如：回答简洁、优先用表格、中文输出…")
+          .setValue(this.plugin.settings.systemPrompt)
+          .onChange(async (value) => {
+            this.plugin.settings.systemPrompt = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    containerEl.createEl("h3", { text: "快捷指令" });
+    containerEl.createEl("p", {
+      text: "在侧边栏右下角“快捷”面板中显示的自定义指令。点击后会把指令与当前选区一起发送给 WorkBuddy。",
+      cls: "setting-item-description"
+    });
+    const customWrap = containerEl.createDiv({ cls: "workbuddy-settings-quick-actions" });
+    this.renderQuickActionsSettings(customWrap);
+    new Setting(containerEl)
+      .setName("添加自定义快捷指令")
+      .addButton((button) =>
+        button.setButtonText("添加").onClick(async () => {
+          this.plugin.settings.customQuickActions.push({ name: "新指令", prompt: "" });
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
     containerEl.createEl("h3", { text: "插件更新" });
     new Setting(containerEl)
       .setName("GitHub 更新仓库")
@@ -123,5 +165,46 @@ export class WorkBuddySettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         })
       );
+  }
+
+  private renderQuickActionsSettings(parent: HTMLElement): void {
+    parent.empty();
+    const items = this.plugin.settings.customQuickActions;
+    if (items.length === 0) {
+      parent.createEl("p", {
+        text: "暂无自定义指令。点击下方“添加”创建，或使用内置指令。",
+        cls: "setting-item-description"
+      });
+      return;
+    }
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]!;
+      const row = parent.createDiv({ cls: "workbuddy-quick-action-row" });
+      const nameInput = row.createEl("input", {
+        type: "text",
+        value: item.name,
+        attr: { placeholder: "名称（面板中显示）" }
+      });
+      nameInput.style.width = "100%";
+      nameInput.addEventListener("change", async () => {
+        this.plugin.settings.customQuickActions[i]!.name = nameInput.value;
+        await this.plugin.saveSettings();
+      });
+      const promptInput = row.createEl("textarea", {
+        attr: { placeholder: "提示词（会与选区一起发送）", rows: "3" }
+      });
+      promptInput.style.width = "100%";
+      promptInput.value = item.prompt;
+      promptInput.addEventListener("change", async () => {
+        this.plugin.settings.customQuickActions[i]!.prompt = promptInput.value;
+        await this.plugin.saveSettings();
+      });
+      const remove = row.createEl("button", { text: "删除", cls: "mod-warning" });
+      remove.addEventListener("click", async () => {
+        this.plugin.settings.customQuickActions.splice(i, 1);
+        await this.plugin.saveSettings();
+        this.display();
+      });
+    }
   }
 }
