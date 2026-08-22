@@ -90,6 +90,8 @@ interface WorkBuddyTask {
   currentTurnTools: Map<string, StoredToolActivity>;
   pendingImages: PromptImage[];
   configOptions: ConfigOptionState[];
+  /** 用户在本任务中手动选过的模型 value；未选过则默认 Auto */
+  modelChoice: string | null;
   needsHistoryContext: boolean;
   unsubscribeRuntime: () => void;
 }
@@ -245,6 +247,7 @@ export class WorkBuddyChatView extends ItemView {
       currentTurnTools: new Map(),
       pendingImages: [],
       configOptions: [],
+      modelChoice: null,
       needsHistoryContext: Boolean(storedTask?.messages.length),
       unsubscribeRuntime: () => undefined
     };
@@ -441,11 +444,9 @@ export class WorkBuddyChatView extends ItemView {
     const leadingTools = toolbar.createDiv({ cls: "workbuddy-composer-leading" });
 
     this.modelSelectWrap = leadingTools.createDiv({ cls: "workbuddy-model-select" });
-    const modelIcon = this.modelSelectWrap.createSpan({ cls: "workbuddy-model-select-icon" });
-    setIcon(modelIcon, "cpu");
     this.modelSelectEl = this.modelSelectWrap.createEl("select", { cls: "workbuddy-model-select-input dropdown" });
     this.modelSelectEl.disabled = true;
-    this.modelSelectEl.createEl("option", { text: "默认模型", value: "" });
+    this.modelSelectEl.createEl("option", { text: "Auto", value: "" });
     this.modelSelectEl.addEventListener("change", () => void this.onModelChange());
 
     const attach = toolbar.createEl("button", { text: "@ 资料", cls: "workbuddy-secondary-button" });
@@ -1545,36 +1546,54 @@ export class WorkBuddyChatView extends ItemView {
 
     this.modelSelectEl.disabled = false;
     this.modelSelectWrap.title = "切换 WorkBuddy 模型";
-    // 顶部追加 Auto（自动选择）选项，与 WorkBuddy 内的 auto 行为对齐
-    const hasAuto = modelOption.options.some((option) => option.value.toLowerCase() === "auto");
-    if (!hasAuto) {
+    // 默认选中 Auto（与 WorkBuddy 内的 auto 模式对齐），用户手动选过则尊重其选择
+    const preferred = task?.modelChoice ?? "auto";
+    const autoOption = modelOption.options.find((option) => option.value.toLowerCase() === "auto");
+    const autoValue = autoOption?.value ?? "auto";
+    const preferredValue =
+      preferred.toLowerCase() === "auto"
+        ? autoValue
+        : modelOption.options.some((option) => option.value === preferred)
+          ? preferred
+          : autoValue;
+    // CLI 不带 auto 选项时顶部补一个
+    if (!autoOption) {
       this.modelSelectEl.createEl("option", {
-        text: "Auto（自动选择）",
+        text: "Auto",
         value: "auto",
-        attr: modelOption.currentValue.toLowerCase() === "auto" ? { selected: "true" } : undefined
+        attr: preferredValue === "auto" ? { selected: "true" } : undefined
       });
     }
+    // CLI 偶尔会返回重复项（如同名 Hy3 对应两个不同大小写的 value），按 lowercase value 去重
+    const seenValues = new Set<string>(autoOption ? [] : ["auto"]);
     for (const option of modelOption.options) {
+      const dedupeKey = option.value.toLowerCase();
+      if (seenValues.has(dedupeKey)) continue;
+      seenValues.add(dedupeKey);
       this.modelSelectEl.createEl("option", {
-        text: option.name,
+        text: option.value.toLowerCase() === "auto" ? "Auto" : option.name,
         value: option.value,
-        attr: option.value === modelOption.currentValue ? { selected: "true" } : undefined
+        attr: option.value === preferredValue ? { selected: "true" } : undefined
       });
     }
     this.modelSelectEl.dataset.configId = modelOption.id;
+    // 用户没手动选过、而 CLI 当前值不是 auto 时，静默把会话切到 auto，让实际模型与显示一致
+    if (!task?.modelChoice && modelOption.currentValue.toLowerCase() !== autoValue.toLowerCase() && task) {
+      void task.runtime.setConfigOption(modelOption.id, autoValue, true);
+    }
   }
 
   private modelSelectorPlaceholder(task: WorkBuddyTask | null): { text: string; title: string } {
-    if (!task) return { text: "默认模型", title: "暂无任务" };
+    if (!task) return { text: "Auto", title: "暂无任务" };
     switch (task.status) {
       case "connecting":
         return { text: "连接中…", title: "WorkBuddy 正在连接，加载模型列表" };
       case "error":
         return { text: "连接失败", title: "WorkBuddy 连接失败，发送消息时会自动重试" };
       case "disconnected":
-        return { text: "默认模型", title: "首次发送时会自动连接 WorkBuddy 并加载模型列表" };
+        return { text: "Auto", title: "默认自动选择模型；首次发送时会自动连接 WorkBuddy 并加载模型列表" };
       default:
-        return { text: "默认模型", title: "WorkBuddy 模型列表加载中" };
+        return { text: "Auto", title: "默认自动选择模型；WorkBuddy 模型列表加载中" };
     }
   }
 
@@ -1584,6 +1603,7 @@ export class WorkBuddyChatView extends ItemView {
     if (!task || !configId) return;
     const value = this.modelSelectEl.value;
     if (!value) return;
+    task.modelChoice = value;
     await task.runtime.setConfigOption(configId, value);
   }
 

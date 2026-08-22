@@ -134,10 +134,10 @@
 .workbuddy-image-remove { position: absolute; top: 1px; right: 1px; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--color-red) 80%, transparent); color: #fff; box-shadow: none; line-height: 16px; font-size: 11px; }
 
 .workbuddy-composer-leading { display: flex; align-items: center; gap: 6px; }
-.workbuddy-model-select { display: inline-flex; align-items: center; gap: 4px; max-width: 150px; }
+.workbuddy-model-select { display: inline-flex; align-items: center; }
 .workbuddy-model-select[hidden] { display: none; }
-.workbuddy-model-select-icon { color: var(--text-muted); display: flex; }
-.workbuddy-model-select-input { max-width: 120px; height: 26px; padding: 0 4px; border-radius: 6px; font-size: 11px; }
+/* 固定宽度：避免 select 随选项文字长度自适应，加载模型列表前后尺寸一致 */
+.workbuddy-model-select-input { width: 112px; padding: 0 6px; border-radius: 6px; font-size: 11px; }
 
 .workbuddy-inline-file-link { color: var(--wb-blue); text-decoration: underline; text-decoration-style: dotted; cursor: pointer; }
 .workbuddy-inline-file-link:hover { text-decoration-style: solid; }

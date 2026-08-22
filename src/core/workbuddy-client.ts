@@ -24,7 +24,7 @@ import type {
   WorkMode
 } from "../types";
 
-const PLUGIN_VERSION = "0.8.3";
+const PLUGIN_VERSION = "0.8.4";
 
 type SettingsProvider = () => WorkBuddySettings;
 type PermissionHandler = (prompt: PermissionPrompt) => Promise<PermissionChoice | null>;
@@ -174,7 +174,7 @@ export class WorkBuddyClient {
     }
   }
 
-  async setConfigOption(configId: string, value: string): Promise<void> {
+  async setConfigOption(configId: string, value: string, silent = false): Promise<void> {
     if (!this.connection || !this.sessionId) return;
     try {
       const result = await this.connection.agent.request(
@@ -187,7 +187,8 @@ export class WorkBuddyClient {
       );
       this.emit({ type: "config-options", options: extractConfigOptions(result.configOptions) });
     } catch (error) {
-      this.fail(error);
+      // silent 模式用于默认值对齐（如默认切到 auto），失败不弹错误，避免打断会话
+      if (!silent) this.fail(error);
     }
   }
 
