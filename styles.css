@@ -33,10 +33,10 @@
 .workbuddy-task-tabs::-webkit-scrollbar { display: none; }
 .workbuddy-task-tab { display: inline-flex; align-items: center; flex: 0 0 auto; min-width: 30px; height: 30px; padding: 0 3px; border: 1px solid var(--background-modifier-border); border-radius: 8px; background: var(--background-secondary); color: var(--text-muted); font-size: 12px; font-weight: 600; box-shadow: none; transition: border-color .15s ease, background-color .15s ease, color .15s ease, transform .15s ease; }
 .workbuddy-task-tab:hover { border-color: var(--background-modifier-border-hover); background: var(--background-modifier-hover); color: var(--text-normal); transform: translateY(-1px); }
-.workbuddy-task-tab.is-active { border-color: color-mix(in srgb, var(--wb-blue) 58%, var(--wb-border)); background: color-mix(in srgb, var(--wb-blue) 11%, var(--background-primary)); color: var(--wb-blue); box-shadow: none !important; }
+.workbuddy-task-tab.is-active { border-color: color-mix(in srgb, var(--wb-blue) 58%, var(--wb-border)); background: color-mix(in srgb, var(--wb-blue) 11%, var(--background-primary)); color: var(--wb-blue); --shadow-none: none; box-shadow: none; }
 .workbuddy-task-tab.is-working { border-color: var(--color-yellow); }
 .workbuddy-task-tab.is-error { border-color: var(--color-red); }
-.workbuddy-task-tab-label { height: 26px; padding: 0 7px; border: 0; background: transparent; color: inherit; box-shadow: none !important; }
+.workbuddy-task-tab-label { height: 26px; padding: 0 7px; border: 0; background: transparent; color: inherit; --shadow-none: none; box-shadow: none; }
 .workbuddy-task-tab-label { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; }
 .workbuddy-add-task { margin-left: auto; border: 0; background: transparent; color: var(--text-muted); box-shadow: none; }
 .workbuddy-add-task:hover { color: var(--wb-blue); }
@@ -99,7 +99,7 @@
 .workbuddy-composer-context-row { display: flex; align-items: flex-start; gap: 8px; min-height: 28px; margin-bottom: 6px; }
 .workbuddy-context { display: flex; flex: 1; min-width: 0; flex-wrap: wrap; align-items: flex-start; gap: 5px; }
 .workbuddy-composer-task-actions { display: flex; flex: 0 0 28px; align-items: center; justify-content: flex-end; margin-left: auto; }
-.workbuddy-task-action { width: 28px; height: 28px; padding: 5px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); box-shadow: none !important; }
+.workbuddy-task-action { width: 28px; height: 28px; padding: 5px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); --shadow-none: none; box-shadow: none; }
 .workbuddy-task-action:hover { background: var(--background-modifier-hover); color: var(--wb-blue); }
 .workbuddy-task-action:disabled { opacity: .32; }
 .workbuddy-slash-menu { max-height: 230px; overflow-y: auto; margin-bottom: 6px; padding: 4px; border: 1px solid var(--wb-border); border-radius: 9px; background: var(--background-secondary); box-shadow: var(--shadow-s); }
@@ -139,8 +139,8 @@
 /* 固定宽度：避免 select 随选项文字长度自适应，加载模型列表前后尺寸一致 */
 .workbuddy-model-select-input { width: 112px; padding: 0 6px; border-radius: 6px; font-size: 11px; }
 
-.workbuddy-inline-file-link { color: var(--wb-blue); text-decoration: underline; text-decoration-style: dotted; cursor: pointer; }
-.workbuddy-inline-file-link:hover { text-decoration-style: solid; }
+.workbuddy-inline-file-link { color: var(--wb-blue); border-bottom: 1px dotted var(--wb-blue); cursor: pointer; }
+.workbuddy-inline-file-link:hover { border-bottom-style: solid; }
 
 .workbuddy-modal-desc { margin: 0 0 10px; color: var(--text-muted); font-size: 12px; }
 .workbuddy-system-prompt-textarea { width: 100%; min-height: 120px; resize: vertical; border-radius: 8px; padding: 8px; }
@@ -226,6 +226,7 @@
 .workbuddy-settings-quick-actions { margin: 8px 0; }
 .workbuddy-quick-action-row { padding: 10px 0; border-top: 1px solid var(--background-modifier-border); display: flex; flex-direction: column; gap: 6px; }
 .workbuddy-quick-action-row:first-child { border-top: 0; }
+.workbuddy-quick-action-name, .workbuddy-quick-action-prompt { width: 100%; }
 
 @media (max-width: 360px) {
   .workbuddy-status span:last-child { display: none; }
