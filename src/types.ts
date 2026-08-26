@@ -17,6 +17,7 @@ export interface WorkBuddySettings {
   themeColor: string;
   systemPrompt: string;
   customQuickActions: QuickAction[];
+  showToolCalls: boolean;
 }
 
 export const DEFAULT_SETTINGS: WorkBuddySettings = {
@@ -30,7 +31,8 @@ export const DEFAULT_SETTINGS: WorkBuddySettings = {
   autoCheckUpdates: false,
   themeColor: "#2f6fec",
   systemPrompt: "",
-  customQuickActions: []
+  customQuickActions: [],
+  showToolCalls: false
 };
 
 export interface AttachedContext {
