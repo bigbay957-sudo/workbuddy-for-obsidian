@@ -10,7 +10,7 @@ export class WorkBuddySettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "WorkBuddy for Obsidian" });
+    new Setting(containerEl).setHeading().setName("WorkBuddy AI");
     containerEl.createEl("p", {
       text: "插件通过本机 codebuddy --acp 私有进程连接，不开放端口，也不保存模型 API Key。"
     });
@@ -124,7 +124,7 @@ export class WorkBuddySettingTab extends PluginSettingTab {
           })
       );
 
-    containerEl.createEl("h3", { text: "快捷指令" });
+    new Setting(containerEl).setHeading().setName("快捷指令");
     containerEl.createEl("p", {
       text: "在侧边栏右下角“快捷”面板中显示的自定义指令。点击后会把指令与当前选区一起发送给 WorkBuddy。",
       cls: "setting-item-description"
@@ -141,7 +141,7 @@ export class WorkBuddySettingTab extends PluginSettingTab {
         })
       );
 
-    containerEl.createEl("h3", { text: "插件更新" });
+    new Setting(containerEl).setHeading().setName("插件更新");
     new Setting(containerEl)
       .setName("GitHub 更新仓库")
       .setDesc("发布后填写 owner/repository 或完整 GitHub 地址。插件只从该仓库的 latest release 下载标准三文件。")
@@ -181,19 +181,19 @@ export class WorkBuddySettingTab extends PluginSettingTab {
       const item = items[i]!;
       const row = parent.createDiv({ cls: "workbuddy-quick-action-row" });
       const nameInput = row.createEl("input", {
+        cls: "workbuddy-quick-action-name",
         type: "text",
         value: item.name,
         attr: { placeholder: "名称（面板中显示）" }
       });
-      nameInput.style.width = "100%";
       nameInput.addEventListener("change", async () => {
         this.plugin.settings.customQuickActions[i]!.name = nameInput.value;
         await this.plugin.saveSettings();
       });
       const promptInput = row.createEl("textarea", {
+        cls: "workbuddy-quick-action-prompt",
         attr: { placeholder: "提示词（会与选区一起发送）", rows: "3" }
       });
-      promptInput.style.width = "100%";
       promptInput.value = item.prompt;
       promptInput.addEventListener("change", async () => {
         this.plugin.settings.customQuickActions[i]!.prompt = promptInput.value;
