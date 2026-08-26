@@ -1,4 +1,4 @@
-# WorkBuddy for Obsidian
+# WorkBuddy AI
 
 [English](#english) | [中文](#中文)
 
