@@ -892,6 +892,11 @@ export class WorkBuddyChatView extends ItemView {
       detail: event.detail,
       createdAt: previous?.createdAt ?? Date.now()
     });
+    // 用户未开启"显示工具调用"时，跳过 UI 渲染（仍记录到 task.currentTurnTools 供 history 使用）
+    if (!this.plugin.settings.showToolCalls) {
+      this.scrollToBottom(task);
+      return;
+    }
     let card = task.toolEls.get(event.id);
     if (!card) {
       card = task.messagesEl.createDiv({ cls: "workbuddy-tool" });
@@ -998,7 +1003,7 @@ export class WorkBuddyChatView extends ItemView {
   }
 
   private renderToolActivities(message: HTMLElement, activities: StoredToolActivity[]): void {
-    if (activities.length === 0) return;
+    if (activities.length === 0 || !this.plugin.settings.showToolCalls) return;
     const details = message.createEl("details", { cls: "workbuddy-tool-history" });
     details.createEl("summary", { text: `工具操作 · ${activities.length}` });
     for (const activity of activities) {
