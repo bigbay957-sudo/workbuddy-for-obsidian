@@ -1564,12 +1564,15 @@ export class WorkBuddyChatView extends ItemView {
         attr: preferredValue === "auto" ? { selected: "true" } : undefined
       });
     }
-    // CLI 偶尔会返回重复项（如同名 Hy3 对应两个不同大小写的 value），按 lowercase value 去重
-    const seenValues = new Set<string>(autoOption ? [] : ["auto"]);
+    // CLI 偶尔会返回重复项（同名 Hy3 对应两个完全不同的 value），按 lowercase value + name 双键去重
+    const seenKeys = new Set<string>(autoOption ? [] : ["auto"]);
+    const seenNames = new Set<string>(autoOption ? [] : ["auto"]);
     for (const option of modelOption.options) {
       const dedupeKey = option.value.toLowerCase();
-      if (seenValues.has(dedupeKey)) continue;
-      seenValues.add(dedupeKey);
+      const nameKey = option.name.trim().toLowerCase();
+      if (seenKeys.has(dedupeKey) || seenNames.has(nameKey)) continue;
+      seenKeys.add(dedupeKey);
+      seenNames.add(nameKey);
       this.modelSelectEl.createEl("option", {
         text: option.value.toLowerCase() === "auto" ? "Auto" : option.name,
         value: option.value,
