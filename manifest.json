@@ -1,9 +1,9 @@
 {
   "id": "workbuddy-ai",
   "name": "WorkBuddy AI",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "minAppVersion": "1.7.2",
-  "description": "Access WorkBuddy AI in Obsidian sidebar: multi-task chat, strong references, source tracing, quick selection actions, and work templates.",
+  "description": "Bring WorkBuddy AI into your note-taking sidebar: multi-task chat, strong references, source tracing, quick selection actions, and work templates.",
   "author": "bigbay",
   "authorUrl": "https://github.com/bigbay957-sudo",
   "isDesktopOnly": true
