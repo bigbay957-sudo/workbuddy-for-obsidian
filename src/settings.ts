@@ -112,6 +112,16 @@ export class WorkBuddySettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("显示工具调用")
+      .setDesc("关闭后只保留思考过程和最终回答，隐藏命令、文件读写等工具调用详情。")
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.showToolCalls).onChange(async (value) => {
+          this.plugin.settings.showToolCalls = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
       .setName("常驻指令")
       .setDesc("对所有对话生效的人设或要求；可通过侧边栏右上角设置菜单或输入框 # 编辑。留空则不附加。")
       .addTextArea((text) =>
