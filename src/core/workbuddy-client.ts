@@ -24,7 +24,7 @@ import type {
   WorkMode
 } from "../types";
 
-const PLUGIN_VERSION = "0.8.5";
+const PLUGIN_VERSION = "0.8.9";
 
 type SettingsProvider = () => WorkBuddySettings;
 type PermissionHandler = (prompt: PermissionPrompt) => Promise<PermissionChoice | null>;
