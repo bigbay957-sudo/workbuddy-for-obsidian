@@ -1,6 +1,7 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type WorkBuddyPlugin from "./main";
 import { resolveWorkBuddyExecutable } from "./core/workbuddy-client";
+import { applyThoughtFontSize } from "./ui/display-settings";
 
 export class WorkBuddySettingTab extends PluginSettingTab {
   constructor(app: App, private readonly plugin: WorkBuddyPlugin) {
@@ -10,7 +11,7 @@ export class WorkBuddySettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "WorkBuddy for Obsidian" });
+    new Setting(containerEl).setHeading().setName("WorkBuddy AI");
     containerEl.createEl("p", {
       text: "插件通过本机 codebuddy --acp 私有进程连接，不开放端口，也不保存模型 API Key。"
     });
@@ -61,9 +62,10 @@ export class WorkBuddySettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("权限模式")
-      .setDesc("推荐 default。插件不会启用 bypassPermissions。修改后重新连接生效。")
+      .setDesc("默认 bypassPermissions（最大权限，CLI 不再逐项询问）。修改后重新连接生效。")
       .addDropdown((dropdown) =>
         dropdown
+          .addOption("bypassPermissions", "最大权限：全部放行（默认）")
           .addOption("default", "默认：逐项确认")
           .addOption("acceptEdits", "接受编辑，其它操作确认")
           .addOption("plan", "计划：只读")
@@ -73,6 +75,35 @@ export class WorkBuddySettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.permissionMode = value as typeof this.plugin.settings.permissionMode;
             await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("自动批准权限请求")
+      .setDesc("开启后，若 CLI 仍发起权限询问，插件直接选择「允许」，不再弹出选择窗口。")
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.autoApprovePermissions).onChange(async (value) => {
+          this.plugin.settings.autoApprovePermissions = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("思考内容字号")
+      .setDesc("侧边栏「思考过程」折叠块的字号，默认 11px，立即生效。")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("9", "9px（极小）")
+          .addOption("10", "10px（很小）")
+          .addOption("11", "11px（默认）")
+          .addOption("12", "12px（原大小）")
+          .addOption("13", "13px（偏大）")
+          .addOption("14", "14px（大）")
+          .setValue(String(this.plugin.settings.thoughtFontSize))
+          .onChange(async (value) => {
+            this.plugin.settings.thoughtFontSize = Number.parseInt(value, 10);
+            await this.plugin.saveSettings();
+            applyThoughtFontSize(this.plugin.settings.thoughtFontSize);
           })
       );
 
@@ -112,6 +143,16 @@ export class WorkBuddySettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("显示工具调用")
+      .setDesc("关闭后只保留思考过程和最终回答，隐藏命令、文件读写等工具调用详情。")
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.showToolCalls).onChange(async (value) => {
+          this.plugin.settings.showToolCalls = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
       .setName("常驻指令")
       .setDesc("对所有对话生效的人设或要求；可通过侧边栏右上角设置菜单或输入框 # 编辑。留空则不附加。")
       .addTextArea((text) =>
@@ -124,7 +165,7 @@ export class WorkBuddySettingTab extends PluginSettingTab {
           })
       );
 
-    containerEl.createEl("h3", { text: "快捷指令" });
+    new Setting(containerEl).setHeading().setName("快捷指令");
     containerEl.createEl("p", {
       text: "在侧边栏右下角“快捷”面板中显示的自定义指令。点击后会把指令与当前选区一起发送给 WorkBuddy。",
       cls: "setting-item-description"
@@ -141,7 +182,7 @@ export class WorkBuddySettingTab extends PluginSettingTab {
         })
       );
 
-    containerEl.createEl("h3", { text: "插件更新" });
+    new Setting(containerEl).setHeading().setName("插件更新");
     new Setting(containerEl)
       .setName("GitHub 更新仓库")
       .setDesc("发布后填写 owner/repository 或完整 GitHub 地址。插件只从该仓库的 latest release 下载标准三文件。")
@@ -181,19 +222,19 @@ export class WorkBuddySettingTab extends PluginSettingTab {
       const item = items[i]!;
       const row = parent.createDiv({ cls: "workbuddy-quick-action-row" });
       const nameInput = row.createEl("input", {
+        cls: "workbuddy-quick-action-name",
         type: "text",
         value: item.name,
         attr: { placeholder: "名称（面板中显示）" }
       });
-      nameInput.style.width = "100%";
       nameInput.addEventListener("change", async () => {
         this.plugin.settings.customQuickActions[i]!.name = nameInput.value;
         await this.plugin.saveSettings();
       });
       const promptInput = row.createEl("textarea", {
+        cls: "workbuddy-quick-action-prompt",
         attr: { placeholder: "提示词（会与选区一起发送）", rows: "3" }
       });
-      promptInput.style.width = "100%";
       promptInput.value = item.prompt;
       promptInput.addEventListener("change", async () => {
         this.plugin.settings.customQuickActions[i]!.prompt = promptInput.value;

@@ -24,11 +24,17 @@ export function isSafeReadPermission(prompt: PermissionPrompt): boolean {
 }
 export function chooseAutomaticPermission(
   mode: WorkMode,
-  prompt: PermissionPrompt
+  prompt: PermissionPrompt,
+  autoApprove = false
 ): string | null {
   const reject = prompt.options.find((option) => option.kind.includes("reject"));
+  const allowAlways = prompt.options.find(
+    (option) => option.kind === "allow_always" || (option.kind.includes("allow") && option.kind.includes("always"))
+  );
   const allowOnce = prompt.options.find((option) => option.kind === "allow_once") ??
     prompt.options.find((option) => option.kind.includes("allow"));
+
+  if (autoApprove) return allowAlways?.optionId ?? allowOnce?.optionId ?? null;
 
   if (mode !== "work") {
     if (isSafeReadPermission(prompt) && allowOnce) return allowOnce.optionId;

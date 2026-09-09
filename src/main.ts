@@ -9,7 +9,8 @@ import { WorkBuddyClient } from "./core/workbuddy-client";
 import { checkPluginUpdate, hasNewerVersion, installPluginUpdate } from "./core/plugin-updater";
 import { WORKBUDDY_ICON_ID, WORKBUDDY_ICON_SVG } from "./core/workbuddy-icon";
 import { WorkBuddySettingTab } from "./settings";
-import { DEFAULT_SETTINGS, type WorkBuddySettings } from "./types";
+import { DEFAULT_SETTINGS, SETTINGS_VERSION, type WorkBuddySettings } from "./types";
+import { applyThoughtFontSize } from "./ui/display-settings";
 import { WORKBUDDY_VIEW_TYPE, WorkBuddyChatView } from "./ui/chat-view";
 import { UpdateModal } from "./ui/update-modal";
 
@@ -95,7 +96,25 @@ export default class WorkBuddyPlugin extends Plugin {
     const { workspaceState: _workspaceState, ...storedSettings } = data ?? {};
     this.settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings);
     if (!this.settings.updateRepository) this.settings.updateRepository = DEFAULT_SETTINGS.updateRepository;
+    this.applySettingsMigration();
+    applyThoughtFontSize(this.settings.thoughtFontSize);
     this.workspaceState = normalizeWorkspaceState(data?.workspaceState);
+  }
+
+  private applySettingsMigration(): void {
+    const stored = Number(this.settings.settingsVersion ?? 1);
+    if (stored >= SETTINGS_VERSION) return;
+
+    if (stored < 2) {
+      if (this.settings.permissionMode === "default") {
+        this.settings.permissionMode = "bypassPermissions";
+        this.settings.autoApprovePermissions = true;
+      }
+      if (!this.settings.thoughtFontSize) this.settings.thoughtFontSize = DEFAULT_SETTINGS.thoughtFontSize;
+    }
+
+    this.settings.settingsVersion = SETTINGS_VERSION;
+    void this.saveSettings();
   }
 
   async saveSettings(): Promise<void> {

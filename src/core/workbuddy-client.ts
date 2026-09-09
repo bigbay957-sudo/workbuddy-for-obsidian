@@ -24,7 +24,7 @@ import type {
   WorkMode
 } from "../types";
 
-const PLUGIN_VERSION = "0.8.6";
+const PLUGIN_VERSION = "0.9.0";
 
 type SettingsProvider = () => WorkBuddySettings;
 type PermissionHandler = (prompt: PermissionPrompt) => Promise<PermissionChoice | null>;
@@ -218,7 +218,10 @@ export class WorkBuddyClient {
       }))
     };
 
-    const automatic = chooseAutomaticPermission(this.mode, prompt);
+    const autoApprove =
+      this.getSettings().autoApprovePermissions ||
+      this.getSettings().permissionMode === "bypassPermissions";
+    const automatic = chooseAutomaticPermission(this.mode, prompt, autoApprove);
     if (automatic) return { outcome: { outcome: "selected", optionId: automatic } };
     if (!this.permissionHandler) return { outcome: { outcome: "cancelled" } };
 

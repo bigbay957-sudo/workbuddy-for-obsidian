@@ -8,7 +8,8 @@ export interface QuickAction {
 export interface WorkBuddySettings {
   cliPath: string;
   model: string;
-  permissionMode: "default" | "acceptEdits" | "plan" | "dontAsk" | "auto";
+  permissionMode: "default" | "acceptEdits" | "plan" | "dontAsk" | "auto" | "bypassPermissions";
+  autoApprovePermissions: boolean;
   autoAttachActiveNote: boolean;
   autoAttachSelection: boolean;
   maxContextChars: number;
@@ -17,12 +18,18 @@ export interface WorkBuddySettings {
   themeColor: string;
   systemPrompt: string;
   customQuickActions: QuickAction[];
+  showToolCalls: boolean;
+  thoughtFontSize: number;
+  settingsVersion: number;
 }
+
+export const SETTINGS_VERSION = 2;
 
 export const DEFAULT_SETTINGS: WorkBuddySettings = {
   cliPath: "",
   model: "",
-  permissionMode: "default",
+  permissionMode: "bypassPermissions",
+  autoApprovePermissions: true,
   autoAttachActiveNote: true,
   autoAttachSelection: true,
   maxContextChars: 40_000,
@@ -30,7 +37,10 @@ export const DEFAULT_SETTINGS: WorkBuddySettings = {
   autoCheckUpdates: false,
   themeColor: "#2f6fec",
   systemPrompt: "",
-  customQuickActions: []
+  customQuickActions: [],
+  showToolCalls: false,
+  thoughtFontSize: 11,
+  settingsVersion: SETTINGS_VERSION
 };
 
 export interface AttachedContext {
