@@ -1,5 +1,8 @@
 export type WorkMode = "search" | "ask" | "work" | "plan";
 
+/** 思考过程（reasoning）使用的语言：zh = 强制简体中文，model = 跟随模型默认 */
+export type ThoughtLanguage = "zh" | "model";
+
 export interface QuickAction {
   name: string;
   prompt: string;
@@ -22,10 +25,11 @@ export interface WorkBuddySettings {
   thoughtFontSize: number;
   bodyFontSize: number;
   bodyFontFamily: "sans" | "theme";
+  thoughtLanguage: ThoughtLanguage;
   settingsVersion: number;
 }
 
-export const SETTINGS_VERSION = 3;
+export const SETTINGS_VERSION = 4;
 
 export const DEFAULT_SETTINGS: WorkBuddySettings = {
   cliPath: "",
@@ -44,6 +48,7 @@ export const DEFAULT_SETTINGS: WorkBuddySettings = {
   thoughtFontSize: 11,
   bodyFontSize: 13,
   bodyFontFamily: "sans",
+  thoughtLanguage: "zh",
   settingsVersion: SETTINGS_VERSION
 };
 

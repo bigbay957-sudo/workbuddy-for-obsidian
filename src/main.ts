@@ -120,6 +120,12 @@ export default class WorkBuddyPlugin extends Plugin {
       if (!this.settings.bodyFontFamily) this.settings.bodyFontFamily = DEFAULT_SETTINGS.bodyFontFamily;
     }
 
+    if (stored < 4) {
+      if (this.settings.thoughtLanguage !== "zh" && this.settings.thoughtLanguage !== "model") {
+        this.settings.thoughtLanguage = DEFAULT_SETTINGS.thoughtLanguage;
+      }
+    }
+
     this.settings.settingsVersion = SETTINGS_VERSION;
     void this.saveSettings();
   }

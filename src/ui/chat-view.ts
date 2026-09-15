@@ -37,6 +37,7 @@ import { buildUniqueUploadPath, canUploadLocalFile } from "../core/local-upload"
 import { recommendRelatedNotes, type NoteSignals } from "../core/related-notes";
 import { MAX_WORKBUDDY_TASKS, canAddWorkBuddyTask } from "../core/task-pages";
 import { buildWorkBuddyPrompt } from "../core/prompt-builder";
+import { buildThoughtLanguageInstruction } from "../core/thought-language";
 import {
   dedupeSources,
   extractSourceReferences,
@@ -684,6 +685,9 @@ export class WorkBuddyChatView extends ItemView {
     if (systemPrompt) {
       prompt = `以下是用户的常驻指令，请在本次及后续对话中遵循：\n${systemPrompt}\n\n${prompt}`;
     }
+    // 思考语言约束放在最前面：CLI 侧无对应参数，只能靠提示词压制模型用英文推理的默认习惯
+    const thoughtInstruction = buildThoughtLanguageInstruction(this.plugin.settings.thoughtLanguage);
+    if (thoughtInstruction) prompt = `${thoughtInstruction}\n\n${prompt}`;
     if (task.needsHistoryContext) {
       const history = buildHistoryContext(task.messages.slice(0, -1));
       if (history) prompt += "\n\n以下是这个恢复任务的历史对话，请延续上下文：\n" + history;

@@ -142,6 +142,22 @@ export class WorkBuddySettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("思考过程语言")
+      .setDesc(
+        "让模型用简体中文输出「思考过程」。部分模型默认用英文推理（读取英文文件/命令输出时更明显），此项通过提示词约束其改用中文；若模型仍坚持英文，可换用对中文推理更友好的模型。"
+      )
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("zh", "简体中文（默认）")
+          .addOption("model", "跟随模型默认")
+          .setValue(this.plugin.settings.thoughtLanguage)
+          .onChange(async (value) => {
+            this.plugin.settings.thoughtLanguage = value === "model" ? "model" : "zh";
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
       .setName("自动附加当前笔记")
       .setDesc("发送时把当前 Markdown 笔记作为参考资料。")
       .addToggle((toggle) =>
