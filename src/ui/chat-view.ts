@@ -989,7 +989,6 @@ export class WorkBuddyChatView extends ItemView {
     if (!text) return;
     const actions = message.createDiv({ cls: "workbuddy-response-actions" });
     this.createAction(actions, "copy", "复制", () => void navigator.clipboard.writeText(text));
-    this.createAction(actions, "text-cursor", "复制选中", () => this.copySelectionInMessage(message));
     if (storedMessage) {
       const favorite = this.createAction(actions, "star", storedMessage.favorite ? "取消收藏" : "收藏回答", () => {
         storedMessage.favorite = !storedMessage.favorite;
@@ -1741,17 +1740,6 @@ export class WorkBuddyChatView extends ItemView {
       }
       if (lastIndex < value.length) fragment.appendChild(document.createTextNode(value.slice(lastIndex)));
       node.parentNode?.replaceChild(fragment, node);
-    }
-  }
-
-  private copySelectionInMessage(message: HTMLElement): void {
-    const body = message.querySelector<HTMLElement>(".workbuddy-message-body");
-    const text = selectionWithin(window.getSelection(), body);
-    if (text.trim()) {
-      void navigator.clipboard.writeText(text);
-      new Notice(`已复制选中内容（${text.trim().length} 字）`);
-    } else {
-      new Notice("请先在该回答中选中要复制的部分");
     }
   }
 }

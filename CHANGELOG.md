@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.2 - 2026-09-15
+
+- **移除「复制选中」按钮。** 0.9.1 已让回答正文恢复原生可选中，鼠标拖选后 `Cmd/Ctrl+C` 即可复制任意片段，这个按钮属于冗余入口，去掉后操作栏更简洁。配套删除 `copySelectionInMessage()`；`selectionWithin()` / `isNodeInside()` 工具函数保留，仍供流式渲染的选区保护逻辑使用。
+
 ## 0.9.1 - 2026-09-15
 
 - **修复：回答正文无法选中复制。** Obsidian 核心样式对 `body` 设置了 `user-select: none`，只对 `.markdown-preview-view` / `input` / `textarea` 等白名单容器单独恢复。插件自定义视图里的 `.workbuddy-message-body` 是普通 div，因此整段回答拖不动。现在显式给消息区、差异预览、更新说明、权限弹窗代码块等纯文本区域恢复 `user-select: text`，可以像正文一样拖选任意片段后 Cmd/Ctrl+C。
