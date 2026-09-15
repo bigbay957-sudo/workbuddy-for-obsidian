@@ -1,7 +1,7 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type WorkBuddyPlugin from "./main";
 import { resolveWorkBuddyExecutable } from "./core/workbuddy-client";
-import { applyThoughtFontSize } from "./ui/display-settings";
+import { applyBodyFontFamily, applyBodyFontSize, applyThoughtFontSize } from "./ui/display-settings";
 
 export class WorkBuddySettingTab extends PluginSettingTab {
   constructor(app: App, private readonly plugin: WorkBuddyPlugin) {
@@ -86,6 +86,40 @@ export class WorkBuddySettingTab extends PluginSettingTab {
           this.plugin.settings.autoApprovePermissions = value;
           await this.plugin.saveSettings();
         })
+      );
+
+    new Setting(containerEl)
+      .setName("回答正文字号")
+      .setDesc("侧边栏里 AI 回答正文的字号。默认 13px，比 Obsidian 编辑器正文小一号，接近主流互联网产品的观感。")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("11", "11px（极小）")
+          .addOption("12", "12px（很小）")
+          .addOption("13", "13px（默认）")
+          .addOption("14", "14px（标准）")
+          .addOption("15", "15px（偏大）")
+          .addOption("16", "16px（同 Obsidian 正文）")
+          .setValue(String(this.plugin.settings.bodyFontSize))
+          .onChange(async (value) => {
+            this.plugin.settings.bodyFontSize = Number.parseInt(value, 10);
+            await this.plugin.saveSettings();
+            applyBodyFontSize(this.plugin.settings.bodyFontSize);
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("回答正文字体")
+      .setDesc("默认使用无衬线字体栈（SF Pro / Inter + 苹方），并按 antialiased 渲染让字形更纤细；也可跟随 Obsidian 主题字体。")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("sans", "无衬线（默认）")
+          .addOption("theme", "跟随 Obsidian 主题")
+          .setValue(this.plugin.settings.bodyFontFamily)
+          .onChange(async (value) => {
+            this.plugin.settings.bodyFontFamily = value === "theme" ? "theme" : "sans";
+            await this.plugin.saveSettings();
+            applyBodyFontFamily(this.plugin.settings.bodyFontFamily);
+          })
       );
 
     new Setting(containerEl)

@@ -20,10 +20,12 @@ export interface WorkBuddySettings {
   customQuickActions: QuickAction[];
   showToolCalls: boolean;
   thoughtFontSize: number;
+  bodyFontSize: number;
+  bodyFontFamily: "sans" | "theme";
   settingsVersion: number;
 }
 
-export const SETTINGS_VERSION = 2;
+export const SETTINGS_VERSION = 3;
 
 export const DEFAULT_SETTINGS: WorkBuddySettings = {
   cliPath: "",
@@ -40,6 +42,8 @@ export const DEFAULT_SETTINGS: WorkBuddySettings = {
   customQuickActions: [],
   showToolCalls: false,
   thoughtFontSize: 11,
+  bodyFontSize: 13,
+  bodyFontFamily: "sans",
   settingsVersion: SETTINGS_VERSION
 };
 

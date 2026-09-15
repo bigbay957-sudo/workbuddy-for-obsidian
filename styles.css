@@ -59,12 +59,33 @@
 .workbuddy-welcome h3 { margin: 12px 0 6px; color: var(--text-normal); }
 .workbuddy-welcome p { margin: 0; line-height: 1.6; }
 
-.workbuddy-message { margin: 0 0 14px; }
+.workbuddy-message { margin: 0 0 12px; }
 .workbuddy-message.is-user { display: flex; justify-content: flex-end; }
-.workbuddy-message.is-user .workbuddy-message-body { max-width: 88%; padding: 9px 12px; border-radius: 14px 14px 3px 14px; background: var(--wb-blue); color: white; white-space: pre-wrap; }
+.workbuddy-message.is-user .workbuddy-message-body { max-width: 88%; padding: 8px 11px; border-radius: 14px 14px 3px 14px; background: var(--wb-blue); color: white; white-space: pre-wrap; }
 .workbuddy-message.is-assistant { padding: 1px 2px; }
-.workbuddy-message-label { margin-bottom: 5px; color: var(--wb-blue); font-size: 11px; font-weight: 700; }
-.workbuddy-message-body { line-height: 1.62; overflow-wrap: anywhere; }
+.workbuddy-message-label { margin-bottom: 4px; color: var(--wb-blue); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+
+/* ------------------------------------------------------------------
+ * 回答正文排版（互联网产品观感）
+ * 之前 .workbuddy-message-body 只有 line-height，字体 / 字号全靠继承
+ * Obsidian 界面字体，侧边栏里显得又大又粗（主题把正文设成衬线体时更明显）。
+ * 这里改为显式声明，三个变量可由设置面板实时覆盖：
+ *   --wb-body-size    正文字号（默认 13px，比 Obsidian 编辑器正文小一号）
+ *   --wb-body-weight  正文字重（默认 400）
+ *   --wb-body-font    正文字体栈（默认无衬线：SF Pro / Inter + 苹方）
+ * 注意：Obsidian 的正文排版样式挂在 .markdown-rendered / .markdown-preview-view
+ * 上，而这里用 MarkdownRenderer 渲染出的元素不在那些容器内，必须自行声明。
+ * ------------------------------------------------------------------ */
+.workbuddy-message-body {
+  font-family: var(--wb-body-font, system-ui, sans-serif);
+  font-size: var(--wb-body-size, 13px);
+  font-weight: var(--wb-body-weight, 400);
+  line-height: var(--wb-body-leading, 1.72);
+  letter-spacing: var(--wb-body-tracking, .004em);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-wrap: anywhere;
+}
 .workbuddy-message-body.is-streaming { white-space: pre-wrap; }
 
 /* ------------------------------------------------------------------
@@ -93,6 +114,71 @@
 }
 .workbuddy-message-body > :first-child { margin-top: 0; }
 .workbuddy-message-body > :last-child { margin-bottom: 0; }
+
+/* 正文内部：标题只略微放大、靠字重与颜色区分层级；代码 / 表格再小半号 */
+.workbuddy-message-body h1,
+.workbuddy-message-body h2,
+.workbuddy-message-body h3,
+.workbuddy-message-body h4,
+.workbuddy-message-body h5,
+.workbuddy-message-body h6 {
+  margin: 1.1em 0 .45em;
+  font-weight: 600;
+  line-height: 1.42;
+}
+.workbuddy-message-body h1 { font-size: 1.18em; }
+.workbuddy-message-body h2 { font-size: 1.12em; }
+.workbuddy-message-body h3 { font-size: 1.06em; }
+.workbuddy-message-body h4,
+.workbuddy-message-body h5,
+.workbuddy-message-body h6 { font-size: 1em; color: var(--text-muted); }
+.workbuddy-message-body p { margin: .55em 0; }
+.workbuddy-message-body ul,
+.workbuddy-message-body ol { margin: .5em 0; padding-inline-start: 1.35em; }
+.workbuddy-message-body li { margin: .16em 0; }
+.workbuddy-message-body li::marker { color: var(--text-faint); }
+.workbuddy-message-body strong { font-weight: 600; }
+.workbuddy-message-body a {
+  color: var(--wb-blue);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--wb-blue) 32%, transparent);
+}
+.workbuddy-message-body a:hover { border-bottom-color: var(--wb-blue); }
+.workbuddy-message-body code {
+  padding: .1em .3em;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-normal) 8%, transparent);
+  font-family: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: .88em;
+}
+.workbuddy-message-body pre {
+  margin: .6em 0;
+  padding: 8px 10px;
+  border: 1px solid var(--wb-border);
+  border-radius: 7px;
+  background: var(--background-secondary);
+  overflow: auto;
+  font-size: .88em;
+  line-height: 1.55;
+}
+.workbuddy-message-body pre code { padding: 0; background: none; font-size: 1em; }
+.workbuddy-message-body blockquote {
+  margin: .6em 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--wb-border);
+  color: var(--text-muted);
+}
+.workbuddy-message-body table {
+  width: auto;
+  max-width: 100%;
+  margin: .7em 0;
+  border-collapse: collapse;
+  font-size: .92em;
+}
+.workbuddy-message-body th,
+.workbuddy-message-body td { padding: 5px 8px; border: 1px solid var(--wb-border); }
+.workbuddy-message-body th { background: var(--background-secondary); font-weight: 600; }
+.workbuddy-message-body hr { margin: 1em 0; border: 0; border-top: 1px solid var(--wb-border); }
 
 .workbuddy-thought, .workbuddy-tool, .workbuddy-plan { margin: 8px 0 12px; border: 1px solid var(--wb-border); border-radius: 9px; background: var(--background-secondary); }
 .workbuddy-thought { padding: 6px 8px; color: var(--text-muted); font-size: var(--wb-thought-size, 11px); line-height: 1.5; }

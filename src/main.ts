@@ -10,7 +10,7 @@ import { checkPluginUpdate, hasNewerVersion, installPluginUpdate } from "./core/
 import { WORKBUDDY_ICON_ID, WORKBUDDY_ICON_SVG } from "./core/workbuddy-icon";
 import { WorkBuddySettingTab } from "./settings";
 import { DEFAULT_SETTINGS, SETTINGS_VERSION, type WorkBuddySettings } from "./types";
-import { applyThoughtFontSize } from "./ui/display-settings";
+import { applyBodyFontFamily, applyBodyFontSize, applyThoughtFontSize } from "./ui/display-settings";
 import { WORKBUDDY_VIEW_TYPE, WorkBuddyChatView } from "./ui/chat-view";
 import { UpdateModal } from "./ui/update-modal";
 
@@ -98,6 +98,8 @@ export default class WorkBuddyPlugin extends Plugin {
     if (!this.settings.updateRepository) this.settings.updateRepository = DEFAULT_SETTINGS.updateRepository;
     this.applySettingsMigration();
     applyThoughtFontSize(this.settings.thoughtFontSize);
+    applyBodyFontSize(this.settings.bodyFontSize);
+    applyBodyFontFamily(this.settings.bodyFontFamily);
     this.workspaceState = normalizeWorkspaceState(data?.workspaceState);
   }
 
@@ -111,6 +113,11 @@ export default class WorkBuddyPlugin extends Plugin {
         this.settings.autoApprovePermissions = true;
       }
       if (!this.settings.thoughtFontSize) this.settings.thoughtFontSize = DEFAULT_SETTINGS.thoughtFontSize;
+    }
+
+    if (stored < 3) {
+      if (!this.settings.bodyFontSize) this.settings.bodyFontSize = DEFAULT_SETTINGS.bodyFontSize;
+      if (!this.settings.bodyFontFamily) this.settings.bodyFontFamily = DEFAULT_SETTINGS.bodyFontFamily;
     }
 
     this.settings.settingsVersion = SETTINGS_VERSION;
