@@ -14,8 +14,14 @@ export const MODEL_SELECT_MIN_WIDTH = 112;
 /** 上限：再长也让一步，超出部分交给浏览器裁（配合 title 悬停看全） */
 export const MODEL_SELECT_MAX_WIDTH = 240;
 
-/** 左右内边距 + 原生下拉箭头 + 边框的固定开销 */
-export const MODEL_SELECT_CHROME_WIDTH = 40;
+/**
+ * 左右内边距 + 原生下拉箭头 + 边框的固定开销。
+ *
+ * 用无头 Chromium 实测（11px 字号、`padding: 0 6px`）为 34.4–34.7px。
+ * 这里取 44px 留余量：Obsidian 的 `.dropdown` 自带背景箭头和内边距，
+ * 真实开销可能比裸 select 大，宁可稍宽几 px 也不要裁字。
+ */
+export const MODEL_SELECT_CHROME_WIDTH = 44;
 
 export function computeModelSelectWidth(textWidth: number): number {
   if (!Number.isFinite(textWidth) || textWidth <= 0) return MODEL_SELECT_MIN_WIDTH;
