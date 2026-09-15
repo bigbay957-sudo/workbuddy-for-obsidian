@@ -2,6 +2,9 @@
   --wb-blue: #2f6fec;
   --wb-blue-soft: color-mix(in srgb, var(--wb-blue) 12%, transparent);
   --wb-border: var(--background-modifier-border);
+  /* 工具栏控件（模型选框、次级按钮）共用的描边。要调轻/调重，只改这两行。 */
+  --wb-control-border: color-mix(in srgb, var(--text-muted) 22%, transparent);
+  --wb-control-border-hover: color-mix(in srgb, var(--text-muted) 38%, transparent);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -244,7 +247,22 @@
 /* 空间不足时整行换行，而不是把按钮文字挤变形；子元素一律禁止收缩 */
 .workbuddy-composer-toolbar { display: flex; align-items: center; flex-wrap: wrap; row-gap: 6px; margin-top: 7px; }
 .workbuddy-composer-toolbar > * { flex: 0 0 auto; }
-.workbuddy-view .workbuddy-secondary-button { border: 0; background: transparent; color: var(--text-muted); box-shadow: none; font-size: 11px; }
+/* 工具栏次级按钮（@ 资料 / 关联资料 / 快捷）：与模型选框用同一套视觉语言 ——
+   浅底 + 轻描边 + 同圆角，避免它们看起来像"飘在背景上的文字"。 */
+.workbuddy-view .workbuddy-secondary-button {
+  border: 1px solid var(--wb-control-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  box-shadow: none;
+  border-radius: 6px;
+  min-height: 28px;
+  padding: 0 9px;
+  font-size: 11px;
+}
+.workbuddy-view .workbuddy-secondary-button:hover {
+  border-color: var(--wb-control-border-hover);
+  color: var(--text-normal);
+}
 .workbuddy-view .workbuddy-secondary-button:disabled { opacity: .38; }
 .workbuddy-send-actions { margin-left: auto; display: flex; gap: 6px; }
 .workbuddy-view .workbuddy-stop-button, .workbuddy-view .workbuddy-send-button { padding: 5px 12px; }
@@ -282,11 +300,11 @@
   border-radius: 6px;
   font-size: 11px;
   background-color: var(--background-secondary);
-  border: 1px solid color-mix(in srgb, var(--text-muted) 32%, transparent);
+  border: 1px solid var(--wb-control-border);
   box-shadow: none;
 }
 .workbuddy-view .workbuddy-model-select-input:hover {
-  border-color: color-mix(in srgb, var(--text-muted) 55%, transparent);
+  border-color: var(--wb-control-border-hover);
 }
 /* 基础规则里的 box-shadow: none 会连核心的聚焦环一起盖掉（select:focus-visible 强度 0,1,1
    < 本规则 0,2,0），键盘导航就失去可见焦点。这里给一个更明确的焦点环补回来。 */
@@ -345,7 +363,6 @@
 .workbuddy-diff-preview mark.is-removed { background: color-mix(in srgb, var(--color-red) 24%, transparent); text-decoration: line-through; }
 .workbuddy-diff-preview mark.is-added { background: color-mix(in srgb, var(--color-green) 24%, transparent); }
 
-.workbuddy-quick-actions-toggle { padding: 5px 10px; }
 .workbuddy-quick-actions-popover {
   position: absolute;
   bottom: calc(100% + 6px);
