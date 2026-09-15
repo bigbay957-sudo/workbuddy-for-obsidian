@@ -88,7 +88,7 @@ export default class WorkBuddyPlugin extends Plugin {
 
   createRuntime(): WorkBuddyClient {
     if (!this.vaultPath) throw new Error("WorkBuddy 知识库路径尚未初始化");
-    return new WorkBuddyClient(() => this.settings, this.vaultPath);
+    return new WorkBuddyClient(() => this.settings, this.vaultPath, this.manifest.version);
   }
 
   async loadSettings(): Promise<void> {
@@ -123,6 +123,12 @@ export default class WorkBuddyPlugin extends Plugin {
     if (stored < 4) {
       if (this.settings.thoughtLanguage !== "zh" && this.settings.thoughtLanguage !== "model") {
         this.settings.thoughtLanguage = DEFAULT_SETTINGS.thoughtLanguage;
+      }
+    }
+
+    if (stored < 5) {
+      if (typeof this.settings.thoughtExpanded !== "boolean") {
+        this.settings.thoughtExpanded = DEFAULT_SETTINGS.thoughtExpanded;
       }
     }
 

@@ -50,8 +50,13 @@ describe("settings wiring", () => {
     expect(DEFAULT_SETTINGS.thoughtLanguage).toBe("zh");
   });
 
-  it("bumped the settings version so existing installs get the new default", () => {
-    expect(SETTINGS_VERSION).toBe(4);
+  it("bumped the settings version so existing installs get the new defaults", () => {
+    expect(SETTINGS_VERSION).toBe(5);
     expect(DEFAULT_SETTINGS.settingsVersion).toBe(SETTINGS_VERSION);
+  });
+
+  it("expands the thought block by default", () => {
+    // v0.9.7：思考过程不再需要每次手点展开
+    expect(DEFAULT_SETTINGS.thoughtExpanded).toBe(true);
   });
 });

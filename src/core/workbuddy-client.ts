@@ -24,8 +24,6 @@ import type {
   WorkMode
 } from "../types";
 
-const PLUGIN_VERSION = "0.9.0";
-
 type SettingsProvider = () => WorkBuddySettings;
 type PermissionHandler = (prompt: PermissionPrompt) => Promise<PermissionChoice | null>;
 
@@ -41,7 +39,9 @@ export class WorkBuddyClient {
 
   constructor(
     private readonly getSettings: SettingsProvider,
-    private readonly cwd: string
+    private readonly cwd: string,
+    /** 由调用方传入真实插件版本（main.ts 传 this.manifest.version） */
+    private readonly pluginVersion: string
   ) {}
 
   onEvent(listener: (event: RuntimeEvent) => void): () => void {
@@ -119,7 +119,7 @@ export class WorkBuddyClient {
           terminal: false,
           plan: {}
         },
-        clientInfo: { name: "WorkBuddy for Obsidian", version: PLUGIN_VERSION }
+        clientInfo: { name: "WorkBuddy for Obsidian", version: this.pluginVersion }
       });
       await this.createSession();
       this.emit({ type: "status", status: "ready", detail: "WorkBuddy 已连接" });

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.9.7 - 2026-09-15
+
+「思考过程」默认展开，不用每次手点了。
+
+- **根因**：`appendThought()` 创建 `<details class="workbuddy-thought">` 时没设 `open` 属性，
+  而原生 `<details>` 的默认态就是折叠。
+- 创建时按 `settings.thoughtExpanded`（默认 `true`）决定是否展开。**只在创建时设置一次** ——
+  该元素在整轮思考中全程复用、不重建，所以你手动折叠后不会被下一个流式 delta 重新顶开。
+- 设置面板新增「思考过程默认展开」，随时可改回折叠。`SETTINGS_VERSION` 4 → 5，
+  老配置走 migration 补默认值。
+- 长思考不会挤占回答：`.workbuddy-thought pre` 本来就有 `max-height: 180px; overflow: auto`，
+  展开后在块内滚动。
+- 类型修正：`querySelector<HTMLElement>` 推断不出 `open` 属性，改为 `HTMLDetailsElement`。
+- 顺手修：`workbuddy-client.ts` 里的 `PLUGIN_VERSION` 硬编码停在 `"0.9.0"`，从 0.9.0 之后
+  就没同步过，会把错的插件版本通过 `initialize` 报给 CLI。改为由 `main.ts` 传入
+  `this.manifest.version`。
+
 ## 0.9.6 - 2026-09-15
 
 让「思考过程」用简体中文输出（可在设置里关掉）。

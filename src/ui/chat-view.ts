@@ -883,9 +883,12 @@ export class WorkBuddyChatView extends ItemView {
   }
 
   private appendThought(task: WorkBuddyTask, text: string): void {
-    let thought = task.messagesEl.querySelector<HTMLElement>(".workbuddy-thought.is-current");
+    let thought = task.messagesEl.querySelector<HTMLDetailsElement>(".workbuddy-thought.is-current");
     if (!thought) {
       thought = task.messagesEl.createEl("details", { cls: "workbuddy-thought is-current" });
+      // 默认展开：思考过程不再需要每次手点。仅创建时设置一次 ——
+      // 之后用户手动折叠不会被流式刷新重新顶开（该元素全程复用，不再重建）。
+      thought.open = this.plugin.settings.thoughtExpanded;
       thought.createEl("summary", { text: "思考过程" });
       thought.createEl("pre");
     }

@@ -142,6 +142,18 @@ export class WorkBuddySettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("思考过程默认展开")
+      .setDesc(
+        "开启后「思考过程」块默认展开显示，不用每次手点。内容超过 180px 高时在块内滚动，不会挤占回答。改为关闭后，新出现的思考块恢复为默认折叠（已渲染的块保持原状）。"
+      )
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.thoughtExpanded).onChange(async (value) => {
+          this.plugin.settings.thoughtExpanded = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
       .setName("思考过程语言")
       .setDesc(
         "让模型用简体中文输出「思考过程」。部分模型默认用英文推理（读取英文文件/命令输出时更明显），此项通过提示词约束其改用中文；若模型仍坚持英文，可换用对中文推理更友好的模型。"

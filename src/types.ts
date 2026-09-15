@@ -26,10 +26,11 @@ export interface WorkBuddySettings {
   bodyFontSize: number;
   bodyFontFamily: "sans" | "theme";
   thoughtLanguage: ThoughtLanguage;
+  thoughtExpanded: boolean;
   settingsVersion: number;
 }
 
-export const SETTINGS_VERSION = 4;
+export const SETTINGS_VERSION = 5;
 
 export const DEFAULT_SETTINGS: WorkBuddySettings = {
   cliPath: "",
@@ -49,6 +50,7 @@ export const DEFAULT_SETTINGS: WorkBuddySettings = {
   bodyFontSize: 13,
   bodyFontFamily: "sans",
   thoughtLanguage: "zh",
+  thoughtExpanded: true,
   settingsVersion: SETTINGS_VERSION
 };
 
