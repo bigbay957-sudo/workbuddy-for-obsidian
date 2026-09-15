@@ -16,8 +16,6 @@ export interface WorkBuddySettings {
   autoAttachActiveNote: boolean;
   autoAttachSelection: boolean;
   maxContextChars: number;
-  updateRepository: string;
-  autoCheckUpdates: boolean;
   themeColor: string;
   systemPrompt: string;
   customQuickActions: QuickAction[];
@@ -40,8 +38,6 @@ export const DEFAULT_SETTINGS: WorkBuddySettings = {
   autoAttachActiveNote: true,
   autoAttachSelection: true,
   maxContextChars: 40_000,
-  updateRepository: "bigbay957-sudo/workbuddy-for-obsidian",
-  autoCheckUpdates: false,
   themeColor: "#2f6fec",
   systemPrompt: "",
   customQuickActions: [],

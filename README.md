@@ -45,6 +45,16 @@
 
 更多说明见 [PRIVACY.md](PRIVACY.md) 与 [SECURITY.md](SECURITY.md)。
 
+### 合规披露
+
+按 Obsidian 社区目录的披露要求，列明插件对外的行为边界：
+
+- **需要账号**：插件依赖你本机已安装并登录的 WorkBuddy CLI。没有 WorkBuddy 账号时，插件无法完成任何任务。
+- **网络访问**：**插件自身不发起任何网络请求**。所有网络访问（模型调用、资料检索等）都由你本机已安装并登录的 WorkBuddy CLI 发起，具体去向取决于 WorkBuddy 与你所配置的模型提供方，请参阅它们各自的隐私政策。
+- **访问 Vault 之外的文件**：插件以你的 Vault 路径为工作目录启动本机 WorkBuddy CLI。该 CLI 具备读写本机文件的能力 —— 这正是它能处理你 Vault 之外资料的原因（例如你对它说「看一下 ~/Downloads 里的这份财报」）。插件界面本身只会把你通过「上传本地文件」**主动选中**的文件复制一份到 Vault 的 `WorkBuddy/Uploads/`，不会移动或修改原文件。
+- **遥测与广告**：插件不包含任何客户端遥测、（动态或静态）广告或第三方分析 SDK。
+- **自我更新**：插件不会安装或更新自身及其依赖；更新由 Obsidian 自带的社区插件更新机制负责。
+
 ### 前置条件
 
 - Obsidian 桌面版 1.7.2 或更高版本。
@@ -194,6 +204,16 @@ The plugin launches a private stdio subprocess via local `codebuddy --acp`:
 - Local file upload copies into the Vault — original files on your computer are not moved or modified.
 
 See [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md) for details.
+
+### Disclosures
+
+As required by the Obsidian community directory, here is exactly what this plugin does outside its own interface:
+
+- **Account required**: the plugin relies on a locally installed and signed-in WorkBuddy CLI. Without a WorkBuddy account it cannot complete any task.
+- **Network use**: **the plugin itself makes no network requests.** All network access (model calls, research) is performed by the locally installed and signed-in WorkBuddy CLI; the destinations depend on WorkBuddy and the model provider you configure. Refer to their privacy policies.
+- **Accessing files outside the vault**: the plugin launches the local WorkBuddy CLI with your vault path as its working directory. That CLI can read and write files on your machine — which is what lets it work with material outside your vault (for example, "take a look at this report in ~/Downloads"). The plugin UI itself only **copies** the files you explicitly pick through "Upload local file" into `WorkBuddy/Uploads/`; it never moves or modifies the originals.
+- **Telemetry and ads**: none. No client-side telemetry, no ads (dynamic or static), no third-party analytics SDK.
+- **Self-update**: the plugin does not install or update itself or its dependencies; updates are handled by Obsidian's built-in community plugin updater.
 
 ### Prerequisites
 

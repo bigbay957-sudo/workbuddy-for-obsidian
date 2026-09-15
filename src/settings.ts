@@ -243,31 +243,6 @@ export class WorkBuddySettingTab extends PluginSettingTab {
           this.display();
         })
       );
-
-    new Setting(containerEl).setHeading().setName("插件更新");
-    new Setting(containerEl)
-      .setName("GitHub 更新仓库")
-      .setDesc("发布后填写 owner/repository 或完整 GitHub 地址。插件只从该仓库的 latest release 下载标准三文件。")
-      .addText((text) =>
-        text
-          .setPlaceholder("bigbay/workbuddy-for-obsidian")
-          .setValue(this.plugin.settings.updateRepository)
-          .onChange(async (value) => {
-            this.plugin.settings.updateRepository = value.trim();
-            await this.plugin.saveSettings();
-          })
-      )
-      .addButton((button) => button.setButtonText("检查更新").onClick(() => void this.plugin.checkForUpdates(true)));
-
-    new Setting(containerEl)
-      .setName("启动时检查更新")
-      .setDesc("启用后，每次加载插件会检查一次 latest release；不会自动安装。")
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.autoCheckUpdates).onChange(async (value) => {
-          this.plugin.settings.autoCheckUpdates = value;
-          await this.plugin.saveSettings();
-        })
-      );
   }
 
   private renderQuickActionsSettings(parent: HTMLElement): void {

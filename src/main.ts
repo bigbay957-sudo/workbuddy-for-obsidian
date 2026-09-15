@@ -1,18 +1,15 @@
 import { FileSystemAdapter, MarkdownView, Notice, Plugin, addIcon, type Editor, type MarkdownFileInfo } from "obsidian";
-import { join } from "node:path";
 import {
   EMPTY_WORKSPACE_STATE,
   normalizeWorkspaceState,
   type WorkBuddyWorkspaceState
 } from "./core/chat-persistence";
 import { WorkBuddyClient } from "./core/workbuddy-client";
-import { checkPluginUpdate, hasNewerVersion, installPluginUpdate } from "./core/plugin-updater";
 import { WORKBUDDY_ICON_ID, WORKBUDDY_ICON_SVG } from "./core/workbuddy-icon";
 import { WorkBuddySettingTab } from "./settings";
 import { DEFAULT_SETTINGS, SETTINGS_VERSION, type WorkBuddySettings } from "./types";
 import { applyBodyFontFamily, applyBodyFontSize, applyThoughtFontSize } from "./ui/display-settings";
 import { WORKBUDDY_VIEW_TYPE, WorkBuddyChatView } from "./ui/chat-view";
-import { UpdateModal } from "./ui/update-modal";
 
 export default class WorkBuddyPlugin extends Plugin {
   settings: WorkBuddySettings = { ...DEFAULT_SETTINGS };
@@ -46,44 +43,9 @@ export default class WorkBuddyPlugin extends Plugin {
         await view.addTask();
       }
     });
-    this.addCommand({
-      id: "check-updates",
-      name: "检查 WorkBuddy 插件更新",
-      callback: () => void this.checkForUpdates(true)
-    });
     this.registerSelectionActions();
 
     this.addSettingTab(new WorkBuddySettingTab(this.app, this));
-    if (this.settings.autoCheckUpdates && this.settings.updateRepository) {
-      const timer = window.setTimeout(() => void this.checkForUpdates(false), 8_000);
-      this.register(() => window.clearTimeout(timer));
-    }
-  }
-
-  async checkForUpdates(showCurrent = true): Promise<void> {
-    if (!this.settings.updateRepository) {
-      if (showCurrent) new Notice("请先在 WorkBuddy 插件设置中填写 GitHub 更新仓库。", 6_000);
-      return;
-    }
-    try {
-      const info = await checkPluginUpdate(this.settings.updateRepository, this.manifest.version);
-      if (!hasNewerVersion(info)) {
-        if (showCurrent) new Notice(`当前已是最新版本 ${this.manifest.version}`);
-        return;
-      }
-      new UpdateModal(this.app, info, async () => {
-        try {
-          const pluginDirectory = join(this.vaultPath, this.app.vault.configDir, "plugins", this.manifest.id);
-          const backup = await installPluginUpdate(info, pluginDirectory, this.manifest.id);
-          new Notice(`已安装 ${info.version}。请关闭再启用插件或重载 Obsidian。旧版本备份在 ${backup}`, 12_000);
-        } catch (error) {
-          new Notice("安装更新失败：" + readPluginError(error), 10_000);
-          throw error;
-        }
-      }).open();
-    } catch (error) {
-      if (showCurrent) new Notice("检查更新失败：" + readPluginError(error), 8_000);
-    }
   }
 
   createRuntime(): WorkBuddyClient {
@@ -95,7 +57,6 @@ export default class WorkBuddyPlugin extends Plugin {
     const data = (await this.loadData()) as (Partial<WorkBuddySettings> & { workspaceState?: unknown }) | null;
     const { workspaceState: _workspaceState, ...storedSettings } = data ?? {};
     this.settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings);
-    if (!this.settings.updateRepository) this.settings.updateRepository = DEFAULT_SETTINGS.updateRepository;
     this.applySettingsMigration();
     applyThoughtFontSize(this.settings.thoughtFontSize);
     applyBodyFontSize(this.settings.bodyFontSize);
@@ -220,8 +181,4 @@ export default class WorkBuddyPlugin extends Plugin {
     this.saveQueue = this.saveQueue.catch(() => undefined).then(() => this.saveData(data));
     return this.saveQueue;
   }
-}
-
-function readPluginError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

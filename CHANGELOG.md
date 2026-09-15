@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.0 - 2026-09-15
+
+为通过 Obsidian 社区目录审核，移除插件自更新功能。
+
+- **移除自更新**：开发者政策明确禁止「Install or update themselves or their dependencies」。
+  原「检查更新 → 下载 main.js / manifest.json / styles.css → 覆盖插件自身」的整条链路已删除，
+  连带移除设置面板的「插件更新」区块（GitHub 更新仓库、启动时检查更新）与「检查插件更新」命令。
+  删除文件：`src/core/plugin-updater.ts`、`src/core/version.ts`、`src/ui/update-modal.ts`、
+  `tests/version.test.ts`（测试文件 16 → 15）。
+- 删除后**插件自身不再发起任何网络请求**，也不再读写 vault 之外的文件。所有网络访问与
+  vault 外文件访问均由用户本机已安装并登录的 WorkBuddy CLI 发起，插件只是启动它并转发内容。
+- 上架社区目录后，插件更新由 Obsidian 自带的社区插件更新机制负责，不再需要插件自己处理。
+- 遗留的设置键（`updateRepository` / `autoCheckUpdates`）会被静默忽略，无需手动清理 `data.json`。
+
+# Changelog
+
 ## 0.9.9 - 2026-09-15
 
 社区插件目录提交前的规范化，并合并远程并行的 0.8.x 开发线。

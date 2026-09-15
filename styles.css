@@ -97,7 +97,6 @@
  * ------------------------------------------------------------------ */
 .workbuddy-messages,
 .workbuddy-diff-preview,
-.workbuddy-update-notes,
 .workbuddy-permission-modal pre,
 .workbuddy-chat-choice-preview {
   -webkit-user-select: text;
@@ -282,7 +281,6 @@
 .workbuddy-related-title { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: transparent; color: var(--text-normal); box-shadow: none; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .workbuddy-related-title:hover { color: var(--wb-blue); }
 .workbuddy-related-reasons { margin-top: 3px; color: var(--wb-blue); font-size: 10px; }
-.workbuddy-update-notes { max-height: 42vh; overflow: auto; padding: 9px; border-radius: 8px; background: var(--background-secondary); white-space: pre-wrap; font-size: 11px; }
 .workbuddy-context-suggestion { display: flex; align-items: flex-start; gap: 8px; }
 .workbuddy-context-suggestion-kind { flex: 0 0 auto; margin-top: 1px; padding: 1px 5px; border-radius: 5px; background: var(--wb-blue-soft); color: var(--wb-blue); font-size: 9px; }
 .workbuddy-context-suggestion-main { min-width: 0; }
