@@ -104,6 +104,9 @@ export class WorkBuddyChatView extends ItemView {
   private tasks: WorkBuddyTask[] = [];
   private activeTaskId = "";
   private nextTaskId = 1;
+  /** 已排入下一帧的滚动请求（按任务 id）—— 流式 delta 一帧可能来好几个，
+   *  同一帧内只滚一次，否则平滑滚动会被反复打断、反而追不上内容 */
+  private readonly pendingScrolls = new Set<string>();
   private messagesHostEl!: HTMLElement;
   private taskTabsEl!: HTMLElement;
   private addTaskButton!: HTMLButtonElement;
@@ -893,7 +896,17 @@ export class WorkBuddyChatView extends ItemView {
       thought.createEl("pre");
     }
     const pre = thought.querySelector("pre");
-    if (pre) pre.textContent = (pre.textContent ?? "") + text;
+    if (pre) {
+      pre.textContent = (pre.textContent ?? "") + text;
+      // 思考内容超过 180px 后转为 pre 内部滚动，新文字会被截在滚动条下方，
+      // 必须把 pre 自己也滚到底，否则页面上看不到最新生成的部分。
+      pre.scrollTop = pre.scrollHeight;
+    }
+    // 折叠态下新内容不可见，跟着滚只会把回答顶出视野。
+    if (!thought.open) return;
+    // 用户正在消息区拖选时不要抢走选区与滚动位置（与 agent-text 一致）。
+    if (selectionWithin(window.getSelection(), task.messagesEl).trim()) return;
+    this.scrollToBottom(task);
   }
 
   private renderTool(task: WorkBuddyTask, event: Extract<RuntimeEvent, { type: "tool" }>): void {
@@ -1425,9 +1438,14 @@ export class WorkBuddyChatView extends ItemView {
   }
 
   private scrollToBottom(task: WorkBuddyTask): void {
-    requestAnimationFrame(() =>
-      task.messagesEl.scrollTo({ top: task.messagesEl.scrollHeight, behavior: "smooth" })
-    );
+    // 合并同一帧内的重复请求：思考 / 回答的流式 delta 可能一帧来好几个，
+    // 逐个触发平滑滚动会互相打断，最终位置反而落后于最新内容。
+    if (this.pendingScrolls.has(task.id)) return;
+    this.pendingScrolls.add(task.id);
+    requestAnimationFrame(() => {
+      this.pendingScrolls.delete(task.id);
+      task.messagesEl.scrollTo({ top: task.messagesEl.scrollHeight, behavior: "smooth" });
+    });
   }
 
   private applyThemeColor(): void {
