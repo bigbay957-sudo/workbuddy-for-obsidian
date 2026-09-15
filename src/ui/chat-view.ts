@@ -49,6 +49,7 @@ import { ContextSuggestModal, type ContextSuggestItem } from "./context-suggest-
 import { RelatedNotesModal } from "./context-management-modals";
 import { PermissionModal } from "./permission-modal";
 import { applyThoughtFontSize } from "./display-settings";
+import { computeModelSelectWidth, measureTextWidth } from "./model-select-width";
 import {
   ChatHistoryModal,
   ConfirmTaskCloseModal,
@@ -1545,6 +1546,7 @@ export class WorkBuddyChatView extends ItemView {
       this.modelSelectEl.createEl("option", { text: placeholder.text, value: "" });
       this.modelSelectWrap.title = placeholder.title;
       this.modelSelectEl.dataset.configId = "";
+      this.fitModelSelectWidth();
       return;
     }
 
@@ -1584,6 +1586,7 @@ export class WorkBuddyChatView extends ItemView {
       });
     }
     this.modelSelectEl.dataset.configId = modelOption.id;
+    this.fitModelSelectWidth();
     // 用户没手动选过、而 CLI 当前值不是 auto 时，静默把会话切到 auto，让实际模型与显示一致
     if (!task?.modelChoice && modelOption.currentValue.toLowerCase() !== autoValue.toLowerCase() && task) {
       void task.runtime.setConfigOption(modelOption.id, autoValue, true);
@@ -1604,6 +1607,26 @@ export class WorkBuddyChatView extends ItemView {
     }
   }
 
+  /**
+   * 按当前选中的模型名调整下拉宽度：长名字能完整显示，并顺势把右侧的
+   * 「@ 资料 / 关联资料」推过去；名字短时回落到 CSS 的 min-width。
+   * 用离屏 span 按 select 的实际计算字体量文字 —— 比 canvas measureText 更贴近真实排版，
+   * 而且即便字体串没解析出来，span 也会继承界面字体（与 select 同源），不会量偏。
+   */
+  private fitModelSelectWidth(): void {
+    const select = this.modelSelectEl;
+    if (!select) return;
+    const label = (select.selectedOptions[0] ?? select.options[0])?.textContent?.trim() ?? "";
+    // 悬停时用原生 tooltip 兜底：即便触及 240px 上限被裁，也能看全名字
+    select.title = label;
+    if (!label) {
+      select.style.width = "";
+      return;
+    }
+    const textWidth = measureTextWidth(label, window.getComputedStyle(select).font);
+    select.style.width = `${computeModelSelectWidth(textWidth)}px`;
+  }
+
   private async onModelChange(): Promise<void> {
     const task = this.getActiveTask();
     const configId = this.modelSelectEl.dataset.configId;
@@ -1612,6 +1635,7 @@ export class WorkBuddyChatView extends ItemView {
     if (!value) return;
     task.modelChoice = value;
     await task.runtime.setConfigOption(configId, value);
+    this.fitModelSelectWidth();
   }
 
   private handleImagePaste(event: ClipboardEvent): void {

@@ -229,7 +229,9 @@
 .workbuddy-selection-remove { flex: 0 0 auto; min-width: 18px; height: 18px; padding: 0; border: 0; background: transparent; color: var(--text-muted); box-shadow: none; line-height: 18px; }
 .workbuddy-selection-content { max-height: 112px; overflow: auto; padding: 6px 7px; border-radius: 6px; background: color-mix(in srgb, var(--background-primary) 82%, transparent); color: var(--text-normal); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; user-select: text; white-space: pre-wrap; }
 .workbuddy-input { width: 100%; min-height: 72px; max-height: 220px; resize: vertical; border-radius: 10px; padding: 9px 10px; }
-.workbuddy-composer-toolbar { display: flex; align-items: center; margin-top: 7px; }
+/* 空间不足时整行换行，而不是把按钮文字挤变形；子元素一律禁止收缩 */
+.workbuddy-composer-toolbar { display: flex; align-items: center; flex-wrap: wrap; row-gap: 6px; margin-top: 7px; }
+.workbuddy-composer-toolbar > * { flex: 0 0 auto; }
 .workbuddy-secondary-button { border: 0; background: transparent; color: var(--text-muted); box-shadow: none; font-size: 11px; }
 .workbuddy-secondary-button:disabled { opacity: .38; }
 .workbuddy-send-actions { margin-left: auto; display: flex; gap: 6px; }
@@ -245,11 +247,14 @@
 .workbuddy-image-chip img { width: 100%; height: 100%; object-fit: cover; }
 .workbuddy-image-remove { position: absolute; top: 1px; right: 1px; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--color-red) 80%, transparent); color: #fff; box-shadow: none; line-height: 16px; font-size: 11px; }
 
-.workbuddy-composer-leading { display: flex; align-items: center; gap: 6px; }
+.workbuddy-composer-leading { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .workbuddy-model-select { display: inline-flex; align-items: center; }
 .workbuddy-model-select[hidden] { display: none; }
-/* 固定宽度：避免 select 随选项文字长度自适应，加载模型列表前后尺寸一致 */
-.workbuddy-model-select-input { width: 112px; padding: 0 6px; border-radius: 6px; font-size: 11px; }
+/* 宽度不再写死：由 JS 按「当前选中项」的文字宽度计算（src/ui/model-select-width.ts）。
+   固定宽度会让长模型名（Deepseek-V4.1-Flash）被裁掉；而按最长 option 自适应又会被
+   列表里的超长名字撑爆，所以取「当前项实测宽度 + 限幅」。这两个限幅值与
+   MODEL_SELECT_MIN_WIDTH / MODEL_SELECT_MAX_WIDTH 保持一致。 */
+.workbuddy-model-select-input { min-width: 112px; max-width: 240px; padding: 0 6px; border-radius: 6px; font-size: 11px; }
 
 .workbuddy-inline-file-link { color: var(--wb-blue); border-bottom: 1px dotted var(--wb-blue); cursor: pointer; }
 .workbuddy-inline-file-link:hover { border-bottom-style: solid; }
