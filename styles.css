@@ -66,6 +66,31 @@
 .workbuddy-message-label { margin-bottom: 5px; color: var(--wb-blue); font-size: 11px; font-weight: 700; }
 .workbuddy-message-body { line-height: 1.62; overflow-wrap: anywhere; }
 .workbuddy-message-body.is-streaming { white-space: pre-wrap; }
+
+/* ------------------------------------------------------------------
+ * 文本可选中
+ * Obsidian 核心样式里 body 默认 `user-select: none`，只对 .markdown-preview-view
+ * / input / textarea 等白名单容器单独恢复。自定义 ItemView 里的普通 div 不会
+ * 自动继承到可选中状态，导致侧边栏中的回答文字无法拖选，也就没法「只复制其中
+ * 一部分」。这里显式把纯文本区域恢复成 user-select: text。
+ * ------------------------------------------------------------------ */
+.workbuddy-messages,
+.workbuddy-diff-preview,
+.workbuddy-update-notes,
+.workbuddy-permission-modal pre,
+.workbuddy-chat-choice-preview {
+  -webkit-user-select: text;
+  user-select: text;
+}
+/* 折叠标题、操作按钮等交互控件保持不可选中，避免拖选时把控件文字一并带上 */
+.workbuddy-view summary,
+.workbuddy-response-actions,
+.workbuddy-task-bar,
+.workbuddy-composer-toolbar,
+.workbuddy-send-actions {
+  -webkit-user-select: none;
+  user-select: none;
+}
 .workbuddy-message-body > :first-child { margin-top: 0; }
 .workbuddy-message-body > :last-child { margin-bottom: 0; }
 

@@ -824,8 +824,12 @@ export class WorkBuddyChatView extends ItemView {
       case "agent-text":
         if (!task.currentAssistantBody) task.currentAssistantBody = this.appendAssistantMessage(task);
         task.currentAssistantText += event.text;
-        task.currentAssistantBody.setText(task.currentAssistantText);
-        this.scrollToBottom(task);
+        // 用户正在回答区里拖选文本时，既不要重写 DOM 也不要自动滚到底，
+        // 否则选区会被清空、滚动位置也会被抢走。
+        if (!selectionWithin(window.getSelection(), task.currentAssistantBody).trim()) {
+          task.currentAssistantBody.setText(task.currentAssistantText);
+          this.scrollToBottom(task);
+        }
         break;
       case "thought":
         this.appendThought(task, event.text);
@@ -1742,15 +1746,32 @@ export class WorkBuddyChatView extends ItemView {
 
   private copySelectionInMessage(message: HTMLElement): void {
     const body = message.querySelector<HTMLElement>(".workbuddy-message-body");
-    const sel = window.getSelection();
-    const text = sel && sel.rangeCount > 0 && body && sel.anchorNode && body.contains(sel.anchorNode) ? sel.toString() : "";
+    const text = selectionWithin(window.getSelection(), body);
     if (text.trim()) {
       void navigator.clipboard.writeText(text);
-      new Notice("已复制选中内容");
+      new Notice(`已复制选中内容（${text.trim().length} 字）`);
     } else {
       new Notice("请先在该回答中选中要复制的部分");
     }
   }
+}
+
+/** 判断节点是否落在 root 内。选区的 anchor/focus 可能是文本节点，需要先归一到元素 */
+function isNodeInside(node: Node | null | undefined, root: HTMLElement | null): boolean {
+  if (!node || !root) return false;
+  const el = node instanceof Element ? node : node.parentElement;
+  return Boolean(el && root.contains(el));
+}
+
+/**
+ * 取「落在 root 内的原生选区文本」。
+ * 只要 anchor 或 focus 有一端在 root 内就算命中——反向拖选时 anchor 会在外侧。
+ * 返回空串表示当前没有选中这段内容（未选中 / 已折叠 / 选的是别处）。
+ */
+function selectionWithin(sel: Selection | null, root: HTMLElement | null): string {
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed || !root) return "";
+  if (!isNodeInside(sel.anchorNode, root) && !isNodeInside(sel.focusNode, root)) return "";
+  return sel.toString();
 }
 
 function uniqueViews(views: Array<MarkdownView | null>): MarkdownView[] {
