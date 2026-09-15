@@ -18,6 +18,17 @@
   border-bottom: 1px solid var(--wb-border);
 }
 
+/* 按钮基线说明 ────────────────────────────────────────────────────────────
+   Obsidian 核心样式里有 `button:not(.clickable-icon) { background-color:
+   var(--interactive-normal); box-shadow: var(--input-shadow); }`，强度是 (0,1,1)；
+   主题往往再补一条同强度的 `border` / `box-shadow`。插件里下面这些按钮规则
+   只写了单个 class（强度 0,1,0），整条会被核心盖掉，于是「透明底 / 无边框」的
+   按钮全部被渲染成带内阴影的白色键帽 —— 任务页标签叠在外层灰方块上，就成了
+   双层套框那种「有渐变、有厚度」的观感。
+   解决办法：这些规则统一加 `.workbuddy-view` 前缀（强度 0,2,0），压过核心，
+   且不依赖样式表的加载顺序。新增「扁平」按钮时请沿用这个前缀。
+   注：带 `.clickable-icon` 的按钮已被核心豁免，不受影响。 */
+
 .workbuddy-brand { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .workbuddy-brand-icon { color: var(--text-muted); display: flex; }
 .workbuddy-brand-title { font-weight: 650; }
@@ -26,7 +37,7 @@
 .workbuddy-status-dot.is-ready { background: var(--color-green); }
 .workbuddy-status-dot.is-working, .workbuddy-status-dot.is-connecting { background: var(--color-yellow); }
 .workbuddy-status-dot.is-error { background: var(--color-red); }
-.workbuddy-icon-button { border: 0; background: transparent; box-shadow: none; padding: 5px; }
+.workbuddy-view .workbuddy-icon-button { border: 0; background: transparent; box-shadow: none; padding: 5px; }
 
 .workbuddy-task-bar { display: flex; align-items: center; gap: 8px; min-height: 39px; padding: 5px 10px; border-bottom: 1px solid var(--wb-border); }
 .workbuddy-task-tabs { display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
@@ -36,11 +47,11 @@
 .workbuddy-task-tab.is-active { border-color: color-mix(in srgb, var(--wb-blue) 58%, var(--wb-border)); background: color-mix(in srgb, var(--wb-blue) 11%, var(--background-primary)); color: var(--wb-blue); --shadow-none: none; box-shadow: none; }
 .workbuddy-task-tab.is-working { border-color: var(--color-yellow); }
 .workbuddy-task-tab.is-error { border-color: var(--color-red); }
-.workbuddy-task-tab-label { height: 26px; padding: 0 7px; border: 0; background: transparent; color: inherit; --shadow-none: none; box-shadow: none; }
-.workbuddy-task-tab-label { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; }
-.workbuddy-add-task { margin-left: auto; border: 0; background: transparent; color: var(--text-muted); box-shadow: none; }
-.workbuddy-add-task:hover { color: var(--wb-blue); }
-.workbuddy-add-task:disabled { opacity: .35; cursor: not-allowed; }
+.workbuddy-view .workbuddy-task-tab-label { height: 26px; padding: 0 7px; border: 0; background: transparent; color: inherit; --shadow-none: none; box-shadow: none; }
+.workbuddy-view .workbuddy-task-tab-label { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; }
+.workbuddy-view .workbuddy-add-task { margin-left: auto; border: 0; background: transparent; color: var(--text-muted); box-shadow: none; }
+.workbuddy-view .workbuddy-add-task:hover { color: var(--wb-blue); }
+.workbuddy-view .workbuddy-add-task:disabled { opacity: .35; cursor: not-allowed; }
 
 .workbuddy-messages-host { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 
@@ -195,13 +206,13 @@
 .workbuddy-error { margin: 8px 0; padding: 9px; border-radius: 8px; background: color-mix(in srgb, var(--color-red) 12%, transparent); color: var(--text-error); }
 
 .workbuddy-response-actions { display: flex; gap: 2px; margin-top: 7px; opacity: .72; }
-.workbuddy-response-actions button { border: 0; background: transparent; box-shadow: none; }
+.workbuddy-view .workbuddy-response-actions button { border: 0; background: transparent; box-shadow: none; }
 .workbuddy-sources { margin-top: 9px; color: var(--text-muted); font-size: 11px; }
 .workbuddy-sources summary { cursor: pointer; user-select: none; }
 .workbuddy-source-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
-.workbuddy-source-link { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 3px 7px; border: 1px solid var(--wb-border); border-radius: 7px; background: var(--background-secondary); color: var(--text-muted); box-shadow: none; font-size: 10px; }
-.workbuddy-source-link span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.workbuddy-source-link:hover { border-color: color-mix(in srgb, var(--wb-blue) 45%, var(--wb-border)); color: var(--wb-blue); }
+.workbuddy-view .workbuddy-source-link { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 3px 7px; border: 1px solid var(--wb-border); border-radius: 7px; background: var(--background-secondary); color: var(--text-muted); box-shadow: none; font-size: 10px; }
+.workbuddy-view .workbuddy-source-link span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workbuddy-view .workbuddy-source-link:hover { border-color: color-mix(in srgb, var(--wb-blue) 45%, var(--wb-border)); color: var(--wb-blue); }
 .workbuddy-tool-history { margin-top: 8px; color: var(--text-muted); font-size: 11px; }
 .workbuddy-tool-history summary { cursor: pointer; }
 .workbuddy-tool-history-row { margin: 5px 0; padding-left: 8px; border-left: 2px solid var(--wb-border); }
@@ -212,41 +223,41 @@
 .workbuddy-composer-context-row { display: flex; align-items: flex-start; gap: 8px; min-height: 28px; margin-bottom: 6px; }
 .workbuddy-context { display: flex; flex: 1; min-width: 0; flex-wrap: wrap; align-items: flex-start; gap: 5px; }
 .workbuddy-composer-task-actions { display: flex; flex: 0 0 28px; align-items: center; justify-content: flex-end; margin-left: auto; }
-.workbuddy-task-action { width: 28px; height: 28px; padding: 5px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); --shadow-none: none; box-shadow: none; }
-.workbuddy-task-action:hover { background: var(--background-modifier-hover); color: var(--wb-blue); }
-.workbuddy-task-action:disabled { opacity: .32; }
+.workbuddy-view .workbuddy-task-action { width: 28px; height: 28px; padding: 5px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); --shadow-none: none; box-shadow: none; }
+.workbuddy-view .workbuddy-task-action:hover { background: var(--background-modifier-hover); color: var(--wb-blue); }
+.workbuddy-view .workbuddy-task-action:disabled { opacity: .32; }
 .workbuddy-slash-menu { max-height: 230px; overflow-y: auto; margin-bottom: 6px; padding: 4px; border: 1px solid var(--wb-border); border-radius: 9px; background: var(--background-secondary); box-shadow: var(--shadow-s); }
 .workbuddy-slash-menu[hidden] { display: none; }
-.workbuddy-slash-item { display: block; width: 100%; padding: 7px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--text-normal); box-shadow: none; text-align: left; }
-.workbuddy-slash-item:hover, .workbuddy-slash-item:focus { background: var(--background-modifier-hover); }
+.workbuddy-view .workbuddy-slash-item { display: block; width: 100%; padding: 7px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--text-normal); box-shadow: none; text-align: left; }
+.workbuddy-view .workbuddy-slash-item:hover, .workbuddy-view .workbuddy-slash-item:focus { background: var(--background-modifier-hover); }
 .workbuddy-slash-name { display: block; color: var(--wb-blue); font-size: 11px; font-weight: 650; }
 .workbuddy-slash-description { display: block; margin-top: 1px; color: var(--text-muted); font-size: 10px; }
 .workbuddy-context-pill { display: inline-flex; align-items: center; gap: 3px; max-width: 180px; padding: 2px 7px; border: 1px solid var(--wb-border); border-radius: 99px; color: var(--text-muted); font-size: 10px; }
-.workbuddy-context-pill button { border: 0; padding: 0 1px; background: transparent; color: var(--text-muted); box-shadow: none; }
+.workbuddy-view .workbuddy-context-pill button { border: 0; padding: 0 1px; background: transparent; color: var(--text-muted); box-shadow: none; }
 .workbuddy-selection-card { width: 100%; padding: 8px 9px; border: 1px solid color-mix(in srgb, var(--wb-blue) 40%, var(--wb-border)); border-radius: 10px; background: var(--wb-blue-soft); }
 .workbuddy-selection-header { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 6px; }
 .workbuddy-selection-title { min-width: 0; flex: 1; color: var(--wb-blue); font-size: 10px; font-weight: 650; }
 .workbuddy-selection-path { display: block; overflow: hidden; margin-top: 1px; color: var(--text-faint); font-size: 9px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
-.workbuddy-selection-remove { flex: 0 0 auto; min-width: 18px; height: 18px; padding: 0; border: 0; background: transparent; color: var(--text-muted); box-shadow: none; line-height: 18px; }
+.workbuddy-view .workbuddy-selection-remove { flex: 0 0 auto; min-width: 18px; height: 18px; padding: 0; border: 0; background: transparent; color: var(--text-muted); box-shadow: none; line-height: 18px; }
 .workbuddy-selection-content { max-height: 112px; overflow: auto; padding: 6px 7px; border-radius: 6px; background: color-mix(in srgb, var(--background-primary) 82%, transparent); color: var(--text-normal); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; user-select: text; white-space: pre-wrap; }
 .workbuddy-input { width: 100%; min-height: 72px; max-height: 220px; resize: vertical; border-radius: 10px; padding: 9px 10px; }
 /* 空间不足时整行换行，而不是把按钮文字挤变形；子元素一律禁止收缩 */
 .workbuddy-composer-toolbar { display: flex; align-items: center; flex-wrap: wrap; row-gap: 6px; margin-top: 7px; }
 .workbuddy-composer-toolbar > * { flex: 0 0 auto; }
-.workbuddy-secondary-button { border: 0; background: transparent; color: var(--text-muted); box-shadow: none; font-size: 11px; }
-.workbuddy-secondary-button:disabled { opacity: .38; }
+.workbuddy-view .workbuddy-secondary-button { border: 0; background: transparent; color: var(--text-muted); box-shadow: none; font-size: 11px; }
+.workbuddy-view .workbuddy-secondary-button:disabled { opacity: .38; }
 .workbuddy-send-actions { margin-left: auto; display: flex; gap: 6px; }
-.workbuddy-stop-button, .workbuddy-send-button { padding: 5px 12px; }
-.workbuddy-stop-button { background: var(--color-red); color: #fff; border: 0; box-shadow: none; }
-.workbuddy-stop-button:hover { filter: brightness(.92); }
-.workbuddy-stop-button[hidden], .workbuddy-send-button[hidden] { display: none; }
+.workbuddy-view .workbuddy-stop-button, .workbuddy-view .workbuddy-send-button { padding: 5px 12px; }
+.workbuddy-view .workbuddy-stop-button { background: var(--color-red); color: #fff; border: 0; box-shadow: none; }
+.workbuddy-view .workbuddy-stop-button:hover { filter: brightness(.92); }
+.workbuddy-view .workbuddy-stop-button[hidden], .workbuddy-view .workbuddy-send-button[hidden] { display: none; }
 .workbuddy-stopped-hint { margin-top: 6px; padding: 3px 8px; display: inline-block; border-radius: 6px; background: color-mix(in srgb, var(--color-red) 14%, transparent); color: var(--color-red); font-size: 11px; font-weight: 600; }
 
 .workbuddy-image-preview { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .workbuddy-image-preview[hidden] { display: none; }
 .workbuddy-image-chip { position: relative; width: 56px; height: 56px; border-radius: 8px; overflow: hidden; border: 1px solid var(--wb-border); background: var(--background-secondary); }
 .workbuddy-image-chip img { width: 100%; height: 100%; object-fit: cover; }
-.workbuddy-image-remove { position: absolute; top: 1px; right: 1px; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--color-red) 80%, transparent); color: #fff; box-shadow: none; line-height: 16px; font-size: 11px; }
+.workbuddy-view .workbuddy-image-remove { position: absolute; top: 1px; right: 1px; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--color-red) 80%, transparent); color: #fff; box-shadow: none; line-height: 16px; font-size: 11px; }
 
 .workbuddy-composer-leading { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .workbuddy-model-select { display: inline-flex; align-items: center; }
@@ -298,8 +309,8 @@
 .workbuddy-history-title { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .workbuddy-history-meta, .workbuddy-empty-hint { color: var(--text-muted); font-size: 11px; }
 .workbuddy-related-row { display: flex; align-items: center; gap: 7px; padding: 9px 0; border-bottom: 1px solid var(--background-modifier-border); }
-.workbuddy-related-title { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: transparent; color: var(--text-normal); box-shadow: none; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.workbuddy-related-title:hover { color: var(--wb-blue); }
+.workbuddy-related-row .workbuddy-related-title { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: transparent; color: var(--text-normal); box-shadow: none; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.workbuddy-related-row .workbuddy-related-title:hover { color: var(--wb-blue); }
 .workbuddy-related-reasons { margin-top: 3px; color: var(--wb-blue); font-size: 10px; }
 .workbuddy-context-suggestion { display: flex; align-items: flex-start; gap: 8px; }
 .workbuddy-context-suggestion-kind { flex: 0 0 auto; margin-top: 1px; padding: 1px 5px; border-radius: 5px; background: var(--wb-blue-soft); color: var(--wb-blue); font-size: 9px; }
@@ -335,7 +346,7 @@
   z-index: 50;
 }
 .workbuddy-quick-actions-popover[hidden] { display: none; }
-.workbuddy-quick-actions-item {
+.workbuddy-view .workbuddy-quick-actions-item {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -350,13 +361,13 @@
   font-size: 13px;
   cursor: pointer;
 }
-.workbuddy-quick-actions-item:hover { background: var(--background-modifier-hover); }
-.workbuddy-quick-actions-item.is-custom { font-weight: 600; }
+.workbuddy-view .workbuddy-quick-actions-item:hover { background: var(--background-modifier-hover); }
+.workbuddy-view .workbuddy-quick-actions-item.is-custom { font-weight: 600; }
 .workbuddy-quick-actions-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .workbuddy-quick-actions-tag { font-size: 9px; padding: 1px 5px; border-radius: 4px; background: var(--wb-blue-soft); color: var(--wb-blue); }
 .workbuddy-quick-actions-empty { padding: 14px 10px; color: var(--text-muted); font-size: 12px; text-align: center; }
-.workbuddy-quick-actions-manage { margin-top: 4px; padding: 7px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); box-shadow: none; font-size: 11px; text-align: center; cursor: pointer; }
-.workbuddy-quick-actions-manage:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.workbuddy-view .workbuddy-quick-actions-manage { margin-top: 4px; padding: 7px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); box-shadow: none; font-size: 11px; text-align: center; cursor: pointer; }
+.workbuddy-view .workbuddy-quick-actions-manage:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 
 .workbuddy-settings-quick-actions { margin: 8px 0; }
 .workbuddy-quick-action-row { padding: 10px 0; border-top: 1px solid var(--background-modifier-border); display: flex; flex-direction: column; gap: 6px; }
