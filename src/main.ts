@@ -34,12 +34,12 @@ export default class WorkBuddyPlugin extends Plugin {
 
     this.addRibbonIcon(WORKBUDDY_ICON_ID, "打开 WorkBuddy", () => void this.activateView());
     this.addCommand({
-      id: "open-workbuddy",
+      id: "open",
       name: "打开 WorkBuddy 侧边栏",
       callback: () => void this.activateView()
     });
     this.addCommand({
-      id: "new-workbuddy-chat",
+      id: "new-chat",
       name: "新增 WorkBuddy 任务页",
       callback: async () => {
         const view = await this.activateView();
@@ -47,7 +47,7 @@ export default class WorkBuddyPlugin extends Plugin {
       }
     });
     this.addCommand({
-      id: "check-workbuddy-updates",
+      id: "check-updates",
       name: "检查 WorkBuddy 插件更新",
       callback: () => void this.checkForUpdates(true)
     });

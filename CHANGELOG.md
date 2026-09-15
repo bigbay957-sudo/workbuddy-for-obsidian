@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.9.9 - 2026-09-15
+
+社区插件目录提交前的规范化，并合并远程并行的 0.8.x 开发线。
+
+- **命令 ID 去掉冗余前缀**：Obsidian 会自动为命令 ID 加上插件 ID 前缀，官方要求命令 ID
+  中不要再包含插件 ID。`open-workbuddy` / `new-workbuddy-chat` / `check-workbuddy-updates`
+  改为 `open` / `new-chat` / `check-updates`，注册后为 `workbuddy-ai:open` 等。
+  ⚠️ 若你之前给这些命令绑过快捷键，需要在「设置 → 快捷键」里重新绑定。
+- **合并远程 0.8.x 线**：远程 `main` 上另有一条 0.8.x 开发线（社区商店 ID/名称合规改名、
+  CSS lint 修复、README 标题、`showToolCalls` 开关等 20 个提交）。逐项核对确认其改动
+  已全部包含在 0.9.x 中（`!important` 0 处、`setHeading()` 3 处、`border-bottom` 替代
+  `text-decoration`、ID `workbuddy-ai` / 名称 `WorkBuddy AI` 均一致），故以本地 0.9.x 为准
+  合并，远程提交与 0.8.7/0.8.8/0.8.9 标签保留在历史中。
+- 提交前合规复核：`innerHTML` 0 处、`vault.modify` 0 处、示例代码无残留、
+  `isDesktopOnly: true`、`description` 146 字符且句号结尾、无 `fundingUrl`。
+
+# Changelog
+
 ## 0.9.8 - 2026-09-15
 
 思考过程流式输出时，页面自动跟着滚到最新生成的那一行。
