@@ -266,7 +266,14 @@
    固定宽度会让长模型名（Deepseek-V4.1-Flash）被裁掉；而按最长 option 自适应又会被
    列表里的超长名字撑爆，所以取「当前项实测宽度 + 限幅」。这两个限幅值与
    MODEL_SELECT_MIN_WIDTH / MODEL_SELECT_MAX_WIDTH 保持一致。 */
-.workbuddy-model-select-input {
+/* 选框与背景要有区分：核心给 select 铺的是
+     background-color: var(--dropdown-background)   ← 浅色主题下 = #ffffff，与工具栏同色
+     box-shadow: var(--input-shadow)                ← 只是一个 alpha 0.12 的 1px 内环
+     border: 1px ButtonBorder solid                 ← macOS 下近似系统灰，白底上几乎不可见
+   三者叠加的结果就是「看不见框」。这里显式给出底色与描边；
+   同时前缀 .workbuddy-view 提权到 (0,2,0)，压过核心的 (0,1,1)，
+   也避免主题里 `select { border: ... }` 之类的规则抢回来。 */
+.workbuddy-view .workbuddy-model-select-input {
   min-width: 112px;
   max-width: 240px;
   /* 实测宽度由 src/ui/model-select-width.ts 通过 setCssProps 写入；未设置时回落到 auto */
@@ -274,6 +281,18 @@
   padding: 0 6px;
   border-radius: 6px;
   font-size: 11px;
+  background-color: var(--background-secondary);
+  border: 1px solid color-mix(in srgb, var(--text-muted) 32%, transparent);
+  box-shadow: none;
+}
+.workbuddy-view .workbuddy-model-select-input:hover {
+  border-color: color-mix(in srgb, var(--text-muted) 55%, transparent);
+}
+/* 基础规则里的 box-shadow: none 会连核心的聚焦环一起盖掉（select:focus-visible 强度 0,1,1
+   < 本规则 0,2,0），键盘导航就失去可见焦点。这里给一个更明确的焦点环补回来。 */
+.workbuddy-view .workbuddy-model-select-input:focus-visible {
+  border-color: var(--wb-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wb-blue) 22%, transparent);
 }
 
 /* 量文字宽度用的离屏探针（src/ui/model-select-width.ts）。
