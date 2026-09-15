@@ -812,7 +812,7 @@ export class WorkBuddyChatView extends ItemView {
       this.linkifyVaultFiles(body);
       this.renderToolActivities(wrapper, message.toolActivities ?? []);
       this.renderSources(wrapper, message.sources ?? []);
-      this.renderResponseActions(task, wrapper, message.text, message.selection ?? null, message);
+      this.renderResponseActions(task, wrapper, message.text, message.selection ?? null);
     }
   }
 
@@ -968,7 +968,7 @@ export class WorkBuddyChatView extends ItemView {
     } : null;
     this.renderToolActivities(message, storedMessage?.toolActivities ?? []);
     this.renderSources(message, sources);
-    this.renderResponseActions(task, message, text, task.currentTurnSelection, storedMessage ?? undefined);
+    this.renderResponseActions(task, message, text, task.currentTurnSelection);
     if (storedMessage) task.messages.push(storedMessage);
     task.currentAssistantBody = null;
     task.currentAssistantText = "";
@@ -983,21 +983,11 @@ export class WorkBuddyChatView extends ItemView {
     task: WorkBuddyTask,
     message: HTMLElement,
     text: string,
-    selection: SelectionSnapshot | null,
-    storedMessage?: StoredChatMessage
+    selection: SelectionSnapshot | null
   ): void {
     if (!text) return;
     const actions = message.createDiv({ cls: "workbuddy-response-actions" });
     this.createAction(actions, "copy", "复制", () => void navigator.clipboard.writeText(text));
-    if (storedMessage) {
-      const favorite = this.createAction(actions, "star", storedMessage.favorite ? "取消收藏" : "收藏回答", () => {
-        storedMessage.favorite = !storedMessage.favorite;
-        favorite.toggleClass("is-favorite", storedMessage.favorite);
-        favorite.setAttribute("aria-label", storedMessage.favorite ? "取消收藏" : "收藏回答");
-        this.schedulePersist();
-      });
-      favorite.toggleClass("is-favorite", storedMessage.favorite === true);
-    }
     this.createAction(actions, "text-cursor-input", "插入", () => this.insertIntoEditor(text, selection));
     if (selection) {
       this.createAction(actions, "replace", "替换原选区", () =>

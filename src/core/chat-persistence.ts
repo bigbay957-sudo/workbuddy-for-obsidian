@@ -18,7 +18,6 @@ export interface StoredChatMessage {
   createdAt: number;
   selection?: StoredSelection;
   sources?: StoredSourceReference[];
-  favorite?: boolean;
   toolActivities?: StoredToolActivity[];
 }
 
@@ -113,7 +112,6 @@ export function buildChatMarkdown(title: string, messages: StoredChatMessage[], 
       }
       lines.push("");
     }
-    if (message.favorite) lines.push("> ⭐ 已收藏的重要回答", "");
   }
   return lines.join("\n").trimEnd() + "\n";
 }
@@ -168,7 +166,6 @@ function normalizeMessage(raw: unknown): StoredChatMessage | null {
     sources: Array.isArray(raw.sources)
       ? raw.sources.map(normalizeSource).filter((source): source is StoredSourceReference => source !== null)
       : undefined,
-    favorite: raw.favorite === true,
     toolActivities: Array.isArray(raw.toolActivities)
       ? raw.toolActivities.map(normalizeToolActivity).filter((activity): activity is StoredToolActivity => activity !== null)
       : undefined

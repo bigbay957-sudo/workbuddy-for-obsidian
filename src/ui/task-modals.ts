@@ -144,10 +144,9 @@ export class ChatHistoryModal extends Modal {
         const chat = entry.task;
         const row = list.createDiv({ cls: "workbuddy-history-row" });
         const main = row.createDiv({ cls: "workbuddy-history-main" });
-        const favorites = chat.messages.filter((message) => message.favorite).length;
         main.createDiv({ text: chat.title, cls: "workbuddy-history-title" });
         main.createDiv({
-          text: `${entry.isOpen ? "已打开 · " : "已关闭 · "}${chat.messages.length} 条消息${favorites ? ` · ${favorites} 条收藏` : ""} · ${new Date(chat.updatedAt).toLocaleString()}`,
+          text: `${entry.isOpen ? "已打开 · " : "已关闭 · "}${chat.messages.length} 条消息 · ${new Date(chat.updatedAt).toLocaleString()}`,
           cls: "workbuddy-history-meta"
         });
         const exportButton = row.createEl("button", { text: "导出" });

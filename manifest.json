@@ -1,7 +1,7 @@
 {
   "id": "workbuddy-ai",
   "name": "WorkBuddy AI",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "minAppVersion": "1.7.2",
   "description": "Bring WorkBuddy AI into your note-taking sidebar: multi-task chat, strong references, source tracing, quick selection actions, and work templates.",
   "author": "bigbay",
