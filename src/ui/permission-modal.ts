@@ -31,7 +31,8 @@ export class PermissionModal extends Modal {
         .setDesc(permissionDescription(option.kind))
         .addButton((button) => {
           button.setButtonText(option.kind.includes("reject") ? "拒绝" : "选择");
-          if (option.kind.includes("always")) button.setWarning();
+          // setWarning 自 1.13.0 起已弃用，破坏性操作用 setDestructive
+      if (option.kind.includes("always")) button.setDestructive();
           button.onClick(() => this.finish({ optionId: option.optionId }));
         });
     }

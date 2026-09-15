@@ -1,8 +1,8 @@
 {
   "id": "workbuddy-ai",
   "name": "WorkBuddy AI",
-  "version": "0.10.0",
-  "minAppVersion": "1.7.2",
+  "version": "0.10.1",
+  "minAppVersion": "1.13.0",
   "description": "Bring WorkBuddy AI into your note-taking sidebar: multi-task chat, strong references, source tracing, quick selection actions, and work templates.",
   "author": "bigbay",
   "authorUrl": "https://github.com/bigbay957-sudo",

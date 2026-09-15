@@ -77,7 +77,7 @@
  * 上，而这里用 MarkdownRenderer 渲染出的元素不在那些容器内，必须自行声明。
  * ------------------------------------------------------------------ */
 .workbuddy-message-body {
-  font-family: var(--wb-body-font, system-ui, sans-serif);
+  font-family: var(--wb-body-font, sans-serif);
   font-size: var(--wb-body-size, 13px);
   font-weight: var(--wb-body-weight, 400);
   line-height: var(--wb-body-leading, 1.72);
@@ -147,7 +147,9 @@
   padding: .1em .3em;
   border-radius: 4px;
   background: color-mix(in srgb, var(--text-normal) 8%, transparent);
-  font-family: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+  /* 不写系统等宽通用族（审核 CSS LINT 会报 extended-system-fonts 不受支持）；
+     下面的等宽字体栈本身已覆盖 macOS / Windows */
+  font-family: "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
   font-size: .88em;
 }
 .workbuddy-message-body pre {
@@ -253,7 +255,25 @@
    固定宽度会让长模型名（Deepseek-V4.1-Flash）被裁掉；而按最长 option 自适应又会被
    列表里的超长名字撑爆，所以取「当前项实测宽度 + 限幅」。这两个限幅值与
    MODEL_SELECT_MIN_WIDTH / MODEL_SELECT_MAX_WIDTH 保持一致。 */
-.workbuddy-model-select-input { min-width: 112px; max-width: 240px; padding: 0 6px; border-radius: 6px; font-size: 11px; }
+.workbuddy-model-select-input {
+  min-width: 112px;
+  max-width: 240px;
+  /* 实测宽度由 src/ui/model-select-width.ts 通过 setCssProps 写入；未设置时回落到 auto */
+  width: var(--wb-model-select-width, auto);
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+/* 量文字宽度用的离屏探针（src/ui/model-select-width.ts）。
+   静态排版样式写在这里而不是在 JS 里拼 style —— 审核 lint 不允许直接赋值 element.style.* */
+.workbuddy-measure-probe {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  white-space: pre;
+  visibility: hidden;
+}
 
 .workbuddy-inline-file-link { color: var(--wb-blue); border-bottom: 1px dotted var(--wb-blue); cursor: pointer; }
 .workbuddy-inline-file-link:hover { border-bottom-style: solid; }
@@ -341,6 +361,8 @@
 .workbuddy-settings-quick-actions { margin: 8px 0; }
 .workbuddy-quick-action-row { padding: 10px 0; border-top: 1px solid var(--background-modifier-border); display: flex; flex-direction: column; gap: 6px; }
 .workbuddy-quick-action-row:first-child { border-top: 0; }
+/* 声明式设置里用 render 逃生舱画的自由布局块（自定义快捷指令）要整行横铺 */
+.workbuddy-settings-stacked { flex-direction: column; align-items: stretch; }
 .workbuddy-quick-action-name, .workbuddy-quick-action-prompt { width: 100%; }
 
 @media (max-width: 360px) {

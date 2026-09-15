@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.10.1 - 2026-09-15
+
+面向 Obsidian 社区目录审核的合规修复，逐条清零审核报告中的问题（功能行为不变）。
+
+### 发布资产
+
+- 发布流程不再额外打包 `workbuddy-for-obsidian-x.y.z.zip`。Obsidian 只认 `main.js` /
+  `manifest.json` / `styles.css` 三个资产，多余文件会让资产校验不通过。
+- Release 新增 `actions/attest-build-provenance`：为 `main.js` 与 `styles.css` 签发
+  构建来源证明，回应报告里的「发布资产缺少 GitHub 工作证明」。
+
+### 源代码 lint（0 error）
+
+- 修掉唯一一条硬错误 `obsidianmd/no-static-styles-assignment`：模型下拉实测宽度改走
+  CSS 自定义属性 `--wb-model-select-width`（`setCssProps`），离屏测宽探针样式移入 CSS 类
+  `.workbuddy-measure-probe`。**两处都不再直接赋值 `element.style.*`。**
+- 文件名清洗不再使用含控制字符的正则（`\x00-\x1f`）与不必要的转义（`\[`）：改为按码位
+  逐字符判断，实现收敛到 `src/core/local-upload.ts`，`chat-view.ts` 里重复的一份已删除。
+- 去掉多余类型断言（`workbuddy-client.ts` 的 `_meta`、`chat-view.ts` 的 `containerEl`
+  与 `replaceRange(..., to)`）。
+- 5 处 `addEventListener(..., async () => {})` 改为 `() => void fn()`，修掉
+  `no-misused-promises`。
+- `requestAnimationFrame` → `window.requestAnimationFrame`；`instanceof Element` →
+  `instanceOf(Element)`；`document.createDocumentFragment/createElement` →
+  Obsidian 的 `createFragment/createEl/createSpan`。
+- 移除 `require("electron")`（改读 `window` 上 Electron 注入的 `require`）。
+- `String(unknown)` 改为显式收敛，避免 `[object Object]`（`workbuddy-client.ts` 工具名、
+  `event-normalizer.ts` 序列化兜底）。
+
+### 设置面板
+
+- 迁移到 Obsidian 1.13.0 的声明式设置 `getSettingDefinitions()`：**设置项可被设置搜索索引**，
+  移除已弃用的 `display()` 与 `setWarning()`。
+- 「检测 CLI 路径」改为独立操作项；「自定义快捷指令」用 `render` 逃生舱保留原有布局，
+  增删后调用 `update()` 重建。
+- 数值型设置写回前收敛回 `number`，`data.json` 不会存成字符串。
+
+### ⚠️ 破坏性变更
+
+- **`minAppVersion` 1.7.2 → 1.13.0**（声明式设置与 `setDestructive` 均要求 1.13.0+）。
+  旧版 Obsidian 将无法启用本插件。
+
+### 其他
+
+- `styles.css` 移除 `ui-monospace` / 系统的 `system-ui` 兜底（审核 CSS LINT 报
+  `extended-system-fonts` 在 Obsidian 1.6.5 不受支持）。
+
 ## 0.10.0 - 2026-09-15
 
 为通过 Obsidian 社区目录审核，移除插件自更新功能。

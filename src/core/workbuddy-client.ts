@@ -206,9 +206,12 @@ export class WorkBuddyClient {
   }
 
   private async handlePermission(params: RequestPermissionRequest): Promise<RequestPermissionResponse> {
-    const meta = params.toolCall._meta as Record<string, unknown> | null | undefined;
+    // _meta 在 ACP schema 里本来就是 Record<string, unknown> | null | undefined，无需断言
+    const meta = params.toolCall._meta;
+    // _meta 的取值类型是 unknown，必须显式收敛成 string，直接 String(...) 会触发 no-base-to-string
+    const metaToolName = meta?.["codebuddy.ai/toolName"];
     const prompt: PermissionPrompt = {
-      toolName: String(meta?.["codebuddy.ai/toolName"] ?? params.toolCall.name ?? "tool"),
+      toolName: typeof metaToolName === "string" && metaToolName ? metaToolName : params.toolCall.name ?? "tool",
       title: params.toolCall.title ?? "工具操作",
       rawInput: params.toolCall.rawInput,
       options: params.options.map((option) => ({

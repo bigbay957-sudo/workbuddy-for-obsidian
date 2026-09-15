@@ -23,6 +23,21 @@ export const MODEL_SELECT_MAX_WIDTH = 240;
  */
 export const MODEL_SELECT_CHROME_WIDTH = 44;
 
+/**
+ * 离屏量文字用的探针元素的类名。
+ *
+ * 排版相关的静态样式写在 styles.css 的 `.workbuddy-measure-probe` 里，
+ * 而不是在 JS 里拼 style —— 审核 lint 不允许直接赋值 `element.style.*`。
+ */
+export const MEASURE_PROBE_CLASS = "workbuddy-measure-probe";
+
+/**
+ * 当前模型名实测宽度写进的 CSS 自定义属性。
+ * styles.css 里 `.workbuddy-model-select-input` 用
+ * `width: var(--wb-model-select-width, auto)` 消费它。
+ */
+export const MODEL_SELECT_WIDTH_VAR = "--wb-model-select-width";
+
 export function computeModelSelectWidth(textWidth: number): number {
   if (!Number.isFinite(textWidth) || textWidth <= 0) return MODEL_SELECT_MIN_WIDTH;
   const wanted = Math.ceil(textWidth) + MODEL_SELECT_CHROME_WIDTH;
@@ -35,13 +50,15 @@ export function computeModelSelectWidth(textWidth: number): number {
  * 用离屏 span 而不是 canvas `measureText`：span 走的是完全相同的排版路径，
  * 字距、连字都一致；而且 `font` 传空串或解析失败时它会继承 body 字体 ——
  * 那正是下拉框继承的同一套界面字体，所以退一步也能量准。
+ *
+ * 注意：这里用的是 Obsidian 注入的全局辅助函数 `createSpan`，不是
+ * `document.createElement`（后者会被审核 lint 拦下）。全局函数只在函数体
+ * 内被调用，模块加载期不触碰 DOM，因此 node 环境下的单测不受影响。
  */
 export function measureTextWidth(label: string, font?: string): number {
   if (!label) return 0;
-  const probe = document.createElement("span");
-  probe.textContent = label;
-  probe.style.cssText = "position:absolute;left:-9999px;top:-9999px;white-space:pre;visibility:hidden";
-  if (font) probe.style.font = font;
+  const probe = createSpan({ cls: MEASURE_PROBE_CLASS, text: label });
+  if (font) probe.setCssStyles({ font });
   document.body.appendChild(probe);
   const width = probe.getBoundingClientRect().width;
   probe.remove();

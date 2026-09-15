@@ -7,6 +7,9 @@ on:
 
 permissions:
   contents: write
+  # 构建来源证明（artifact attestation）走 OIDC，需要这两个写权限。
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -21,14 +24,24 @@ jobs:
       - run: npm run verify
       - name: Verify tag matches manifest
         run: test "${GITHUB_REF_NAME}" = "$(node -p "require('./manifest.json').version")"
-      - name: Build installation zip
-        run: zip "workbuddy-for-obsidian-${GITHUB_REF_NAME}.zip" main.js manifest.json styles.css
+
+      # Obsidian 社区目录会校验发布资产是否带可信的「GitHub 工作证明」。
+      # 只对两个构建产物出证明：manifest.json 是手写的元数据、不是构建产出，不在证明范围内。
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            main.js
+            styles.css
+
       - uses: softprops/action-gh-release@v3
         with:
           body_path: docs/releases/${{ github.ref_name }}.md
+          # ⚠️ 发布资产只能有这三个文件。Obsidian 只下载 main.js / manifest.json / styles.css，
+          # 任何多余文件（例如以前那个装包用的 .zip）都会让资产校验不通过。
+          # 需要 zip 分发时请另外单独上传，不要混进 Release 资产。
           files: |
             main.js
             manifest.json
             styles.css
-            workbuddy-for-obsidian-${{ github.ref_name }}.zip
           generate_release_notes: true

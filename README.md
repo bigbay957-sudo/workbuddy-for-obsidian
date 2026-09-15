@@ -57,7 +57,7 @@
 
 ### 前置条件
 
-- Obsidian 桌面版 1.7.2 或更高版本。
+- Obsidian 桌面版 1.13.0 或更高版本（声明式设置 API 要求）。
 - Node.js 18 或更高版本。
 - 已安装并登录 WorkBuddy CLI。
 
@@ -217,7 +217,7 @@ As required by the Obsidian community directory, here is exactly what this plugi
 
 ### Prerequisites
 
-- Obsidian Desktop 1.7.2 or later.
+- Obsidian Desktop 1.13.0 or later (the declarative settings API requires it).
 - Node.js 18 or later.
 - WorkBuddy CLI installed and signed in.
 

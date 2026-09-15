@@ -41,6 +41,8 @@ function summarizeUnknown(value: unknown): string | undefined {
   try {
     return JSON.stringify(value).slice(0, 2_000);
   } catch {
-    return String(value).slice(0, 2_000);
+    // 走到这里说明 value 是循环引用等无法序列化的结构。
+    // 不能用 String(value)：对象会被字符串化成无信息量的 "[object Object]"（lint: no-base-to-string）。
+    return `[无法序列化的 ${typeof value}]`;
   }
 }
