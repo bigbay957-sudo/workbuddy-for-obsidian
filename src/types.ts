@@ -89,7 +89,13 @@ export type RuntimeEvent =
   | { type: "usage"; text: string }
   | { type: "turn-stop"; reason: string }
   | { type: "config-options"; options: ConfigOptionState[] }
-  | { type: "error"; message: string };
+  /**
+   * kind 用于让 UI 区分错误类型：
+   * - auth：CLI 登录失效，需要引导重新登录（渲染登录/重连按钮 + Notice）
+   * - refusal：内容/权限层面的正常拒绝
+   * - general / undefined：其它执行失败
+   */
+  | { type: "error"; message: string; kind?: "auth" | "refusal" | "general" };
 
 export interface PermissionChoice {
   optionId: string;

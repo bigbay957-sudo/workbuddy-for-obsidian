@@ -207,6 +207,14 @@
 .workbuddy-tool-status { color: var(--text-muted); font-size: 11px; }
 .workbuddy-plan { padding: 10px; }
 .workbuddy-error { margin: 8px 0; padding: 9px; border-radius: 8px; background: color-mix(in srgb, var(--color-red) 12%, transparent); color: var(--text-error); }
+/* 登录失效这类「需要用户动作」的错误：加一道左侧色条 + 动作按钮 */
+.workbuddy-error.is-auth { border-left: 3px solid var(--text-error); }
+.workbuddy-error-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.workbuddy-error-actions button { font-size: 12px; padding: 2px 9px; }
+
+/* 顶栏「移除选区引用」× 按钮（+ 号右侧）：无选区引用时隐藏，悬停红色提示 */
+.workbuddy-selection-close[hidden] { display: none !important; }
+.workbuddy-selection-close:hover { color: var(--text-error, #e05555); }
 
 .workbuddy-response-actions { display: flex; gap: 2px; margin-top: 7px; opacity: .72; }
 .workbuddy-view .workbuddy-response-actions button { border: 0; background: transparent; box-shadow: none; }

@@ -11,6 +11,7 @@ import type {
   RequestPermissionResponse,
   SessionId
 } from "@agentclientprotocol/sdk";
+import { AUTH_RECOVERY_HINT, describeTurnRefusal, looksLikeAuthFailure } from "./auth-hint";
 import { normalizeSessionUpdate } from "./event-normalizer";
 import { chooseAutomaticPermission } from "./permissions";
 import type {
@@ -36,6 +37,8 @@ export class WorkBuddyClient {
   private mode: WorkMode = "ask";
   private stderrTail = "";
   private prompting = false;
+  /** 本轮是否产生过任何流式输出（文本/思考/工具/计划）——用于区分「静默拒绝」与正常拒绝 */
+  private turnHadOutput = false;
 
   constructor(
     private readonly getSettings: SettingsProvider,
@@ -105,6 +108,7 @@ export class WorkBuddyClient {
         if (!event) return;
         // 过滤 CLI 启动期间的 banner 文本：仅在 prompt 轮次内接受 agent 文本输出
         if (event.type === "agent-text" && !this.prompting) return;
+        if (this.prompting) this.turnHadOutput = true;
         this.emit(event);
       });
 
@@ -152,6 +156,7 @@ export class WorkBuddyClient {
     await this.connect();
     if (!this.sessionId) await this.newSession();
     this.prompting = true;
+    this.turnHadOutput = false;
     this.emit({ type: "status", status: "working", detail: "WorkBuddy 正在工作" });
     try {
       const blocks: ContentBlock[] = [];
@@ -165,7 +170,19 @@ export class WorkBuddyClient {
         prompt: promptBlocks
       });
       this.emit({ type: "turn-stop", reason: result.stopReason });
-      this.emit({ type: "status", status: "ready", detail: "本轮完成" });
+      // stopReason="refusal" 是正常 resolve 的：CLI 拒绝执行时不抛异常。
+      // 早期版本在这里一律提示「本轮完成」，于是登录失效时用户只看到「发出去没反应」。
+      if (result.stopReason === "refusal") {
+        const verdict = describeTurnRefusal({ hadOutput: this.turnHadOutput, stderrTail: this.stderrTail });
+        this.emit({ type: "error", kind: verdict.kind, message: verdict.message });
+        this.emit({
+          type: "status",
+          status: "error",
+          detail: verdict.kind === "auth" ? "CLI 登录已失效，请重新登录" : "本轮被拒绝执行"
+        });
+      } else {
+        this.emit({ type: "status", status: "ready", detail: "本轮完成" });
+      }
     } catch (error) {
       this.fail(error);
       throw error;
@@ -240,11 +257,18 @@ export class WorkBuddyClient {
 
   private fail(error: unknown): void {
     const raw = error instanceof Error ? error.message : String(error);
-    const base = /authentication required/i.test(raw)
-      ? "WorkBuddy CLI 尚未登录。请先在终端运行 codebuddy，完成登录后重新打开侧边栏。"
-      : raw;
+    // 认证失败单独分类：UI 会据此渲染「在终端登录 / 重新连接」按钮并弹 Notice
+    if (looksLikeAuthFailure(raw) || looksLikeAuthFailure(this.stderrTail)) {
+      this.emit({
+        type: "error",
+        kind: "auth",
+        message: `WorkBuddy CLI 登录已失效，服务器拒绝了请求。请${AUTH_RECOVERY_HINT}，然后点「我已登录，重新连接」。`
+      });
+      this.emit({ type: "status", status: "error", detail: "CLI 登录已失效，请重新登录" });
+      return;
+    }
     const stderrHint = this.stderrTail.trim() ? "；请检查 WorkBuddy 登录状态或插件设置" : "";
-    this.emit({ type: "error", message: `${base}${stderrHint}` });
+    this.emit({ type: "error", kind: "general", message: `${raw}${stderrHint}` });
     this.emit({ type: "status", status: "error", detail: "连接或执行失败" });
   }
 

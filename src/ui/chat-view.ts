@@ -32,6 +32,7 @@ import {
   isReadableTextExtension,
   type StoredContextReference
 } from "../core/context-reference";
+import { openLoginTerminal } from "../core/cli-login";
 import { WORKBUDDY_ICON_ID } from "../core/workbuddy-icon";
 import { buildUniqueUploadPath, canUploadLocalFile, sanitizeFileName } from "../core/local-upload";
 import { recommendRelatedNotes, type NoteSignals } from "../core/related-notes";
@@ -110,6 +111,7 @@ export class WorkBuddyChatView extends ItemView {
   private messagesHostEl!: HTMLElement;
   private taskTabsEl!: HTMLElement;
   private addTaskButton!: HTMLButtonElement;
+  private selectionCloseButton: HTMLButtonElement | null = null;
   private closeTaskButton!: HTMLButtonElement;
   private inputEl!: HTMLTextAreaElement;
   private statusEl!: HTMLElement;
@@ -318,6 +320,18 @@ export class WorkBuddyChatView extends ItemView {
     });
     setIcon(this.addTaskButton, "square-plus");
     this.addTaskButton.addEventListener("click", () => void this.addTask());
+
+    // 选区引用一旦存在，就不再显示在 pill 区，而是用顶栏这个 × 让它一眼可见、一键撤掉
+    this.selectionCloseButton = taskBar.createEl("button", {
+      cls: "clickable-icon workbuddy-selection-close",
+      attr: { "aria-label": "移除选区引用", title: "移除选区引用" }
+    });
+    setIcon(this.selectionCloseButton, "x");
+    this.selectionCloseButton.hidden = true;
+    this.selectionCloseButton.addEventListener("click", () => {
+      const task = this.getActiveTask();
+      if (task?.selectionSnapshot) this.clearSelectionContext(task);
+    });
   }
 
   private renderTaskTabs(): void {
@@ -856,7 +870,7 @@ export class WorkBuddyChatView extends ItemView {
         this.refreshModelSelector();
         break;
       case "error":
-        this.appendError(task, event.message);
+        this.appendError(task, event.message, event.kind);
         break;
       case "usage":
         break;
@@ -945,9 +959,40 @@ export class WorkBuddyChatView extends ItemView {
     card.createEl("pre", { text });
   }
 
-  private appendError(task: WorkBuddyTask, message: string): void {
-    task.messagesEl.createDiv({ text: message, cls: "workbuddy-error" });
+  private appendError(task: WorkBuddyTask, message: string, kind?: "auth" | "refusal" | "general"): void {
+    const card = task.messagesEl.createDiv({ cls: kind === "auth" ? "workbuddy-error is-auth" : "workbuddy-error" });
+    card.createDiv({ text: message });
+    if (kind !== "auth") {
+      this.scrollToBottom(task);
+      return;
+    }
+
+    // 登录失效不能只写一行红字：给出「去登录」和「已登录，重连」两个动作，
+    // 否则用户不知道该在哪儿敲 /login，也不知道重连要杀掉旧子进程。
+    const actions = card.createDiv({ cls: "workbuddy-error-actions" });
+    const loginButton = actions.createEl("button", { text: "在终端登录", cls: "mod-cta" });
+    loginButton.addEventListener("click", () => {
+      if (!openLoginTerminal(this.plugin.settings.cliPath)) {
+        new Notice("无法自动打开终端，请手动运行 codebuddy 后输入 /login", 10_000);
+      }
+    });
+    const reconnectButton = actions.createEl("button", { text: "我已登录，重新连接" });
+    reconnectButton.addEventListener("click", () => void this.reconnectRuntime(task));
+    new Notice("WorkBuddy CLI 登录已失效：请在终端执行 /login 后重试", 12_000);
     this.scrollToBottom(task);
+  }
+
+  /** 登录状态变了：必须杀掉旧子进程重新拉起，否则继续复用内存里的过期 token */
+  private async reconnectRuntime(task: WorkBuddyTask): Promise<void> {
+    task.runtime.disconnect();
+    this.setTaskStatus(task, "connecting", "正在重新连接…");
+    try {
+      await task.runtime.connect();
+      new Notice("WorkBuddy 已重新连接");
+    } catch (error) {
+      this.setTaskStatus(task, "error", "重新连接失败");
+      new Notice("重新连接失败：" + readError(error), 8_000);
+    }
   }
 
   private async finalizeAssistant(task: WorkBuddyTask, reason: string): Promise<void> {
@@ -1140,6 +1185,9 @@ export class WorkBuddyChatView extends ItemView {
 
   private refreshContextPills(): void {
     if (!this.contextEl) return;
+    if (this.selectionCloseButton) {
+      this.selectionCloseButton.hidden = !this.getActiveTask()?.selectionSnapshot;
+    }
     this.contextEl.empty();
     const task = this.getActiveTask();
     if (!task) return;
@@ -1160,8 +1208,12 @@ export class WorkBuddyChatView extends ItemView {
       card.createDiv({ text: selected.text.trim(), cls: "workbuddy-selection-content" });
     } else if (this.plugin.settings.autoAttachActiveNote) {
       const source = this.getSourceView();
-      const label = source?.file ? "当前笔记 · " + source.file.basename : "当前笔记";
-      this.contextEl.createSpan({ text: label, cls: "workbuddy-context-pill is-active-note" });
+      const pill = this.contextEl.createSpan({ cls: "workbuddy-context-pill is-active-note" });
+      pill.createSpan({ text: source?.file ? "当前笔记 · " + source.file.basename : "当前笔记" });
+      // 取消链接：把设置里的自动附带当前笔记关掉，避免每次发消息都悄悄带上整篇笔记
+      pill
+        .createEl("button", { text: "×", attr: { "aria-label": "取消链接当前笔记", title: "取消链接当前笔记" } })
+        .addEventListener("click", () => void this.unlinkActiveNote());
     }
 
     for (const file of task.attachedFiles.values()) {
@@ -1184,6 +1236,14 @@ export class WorkBuddyChatView extends ItemView {
         this.schedulePersist();
       });
     }
+  }
+
+  /** 取消「自动附带当前笔记」：写设置 + 重画 pill（异步动作包成方法，避免 addEventListener 直接挂 async） */
+  private async unlinkActiveNote(): Promise<void> {
+    this.plugin.settings.autoAttachActiveNote = false;
+    await this.plugin.saveSettings();
+    this.refreshContextPills();
+    new Notice("已取消链接当前笔记，可在设置中重新开启");
   }
 
   private clearSelectionContext(task: WorkBuddyTask): void {
